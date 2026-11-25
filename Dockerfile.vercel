@@ -1,0 +1,37 @@
+# Multi-stage Docker build for RepoLens Java Spring Boot (Serves both Frontend & Backend)
+# Official Eclipse Temurin OpenJDK 17 on Debian Bookworm
+FROM maven:3.9.9-eclipse-temurin-17 AS builder
+
+WORKDIR /build
+
+# Copy Maven parent & subproject POMs first for dependency caching
+COPY pom.xml .
+COPY core/pom.xml core/
+COPY web/pom.xml web/
+COPY mcp-server/pom.xml mcp-server/
+
+# Copy sources for core and web (static files in web/src/main/resources/static are bundled in the JAR)
+COPY core/src core/src
+COPY web/src web/src
+
+# Compile and package web (with core dependency), skipping tests for container packaging
+RUN mvn clean package -DskipTests -pl core,web -am
+
+# Minimal runtime image
+FROM eclipse-temurin:17-jre-jammy
+
+WORKDIR /app
+
+# Create directory for persistent local H2 cache if file-based H2 is active
+RUN mkdir -p /app/data && chmod 777 /app/data
+
+# Copy the built fat JAR from the builder stage
+COPY --from=builder /build/web/target/web-1.0.0-SNAPSHOT.jar /app/app.jar
+
+# Vercel defaults container routing to port 80 or passes PORT environment variable
+ENV PORT=8080
+EXPOSE 8080
+EXPOSE 80
+
+# Run Spring Boot with dynamic port binding and container awareness
+ENTRYPOINT ["sh", "-c", "exec java -Dserver.port=${PORT:-8080} -Djava.security.egd=file:/dev/./urandom -XX:+UseContainerSupport -jar /app/app.jar"]

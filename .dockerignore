@@ -1,0 +1,10 @@
+**/.git
+**/.gitignore
+**/target
+**/data
+**/.repolens
+**/*.zip
+**/*.jar
+**/.vscode
+**/.DS_Store
+*.pdf
