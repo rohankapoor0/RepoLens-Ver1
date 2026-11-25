@@ -19,6 +19,7 @@ RepoLens is a lightweight, zero-login repository hygiene evaluator. It inspects 
 RepoLens follows a clean multi-module architecture:
 - **`core`**: Pure Java library with **zero framework dependencies**. Implements all 8 foundational data structures and algorithms, scoring rubrics, the Greedy Set-Cover Fix Planner, and the DSU Duplicate Detector.
 - **`web`**: Spring Boot application providing the REST API, persistent H2 storage, rate-limited GitHub client, live SVG badge service, and client-side reactive dashboard.
+- **`mcp-server`**: Standalone Model Context Protocol (MCP) STDIO server enabling AI coding assistants (Cursor, Claude Desktop, Claude Code, Antigravity) to audit repositories and profiles in real time via standard I/O. See [`README_MCP.md`](README_MCP.md).
 
 ```mermaid
 flowchart TD
@@ -177,51 +178,42 @@ Add your real-time RepoLens hygiene badge directly to your GitHub repository:
 
 ---
 
-## ☁️ Deployment Guide (Free Hosts: Render / Railway / Fly.io)
+## ☁️ Deployment Guide (Vercel Container Deployment)
 
-RepoLens compiles into a single executable JAR with an embedded Tomcat server and persistent file-based H2 database.
+RepoLens deploys to **Vercel Fluid Compute** as a single, unified Docker container that serves both the static frontend and REST API from a single domain.
 
-### Docker Deployment
-RepoLens includes standard Dockerfile support. Build and run locally or push to Docker Hub:
+### 1. Deploy on Vercel
+1. Push your repository to GitHub (`rohankapoor0/RepoLens-Ver1`).
+2. In the [Vercel Dashboard](https://vercel.com), select **Add New... > Project** and import the repository.
+3. **Framework Preset**: Vercel automatically detects `Dockerfile.vercel` at the root and selects the **Container** preset.
+4. **Environment Variables**: Add your GitHub token:
+   - `GITHUB_TOKEN` = `ghp_yourPersonalAccessTokenHere`
+5. Click **Deploy**. Vercel will build the multi-stage image, push it to Vercel Container Registry (VCR), and bind traffic dynamically to `$PORT`.
 
-```dockerfile
-FROM eclipse-temurin:17-jdk-alpine AS build
-WORKDIR /app
-COPY . .
-RUN ./mvnw clean package -DskipTests
-
-FROM eclipse-temurin:17-jre-alpine
-WORKDIR /app
-COPY --from=build /app/web/target/web-1.0.0-SNAPSHOT.jar app.jar
-RUN mkdir -p /data
-ENV PORT=8080
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+### 2. Local Container Testing
+Build and test the container image locally with Docker:
+```bash
+docker build -f Dockerfile.vercel -t repolens .
+docker run -p 8080:8080 -e GITHUB_TOKEN="ghp_yourToken" repolens
 ```
 
 ### Environment Variables
-Configure the following in your host settings (Render / Railway / Fly.io / Heroku):
 
 | Variable | Required | Default | Description |
 | :--- | :---: | :---: | :--- |
-| `GITHUB_TOKEN` | Yes | *None* | GitHub Personal Access Token (5,000 req/hr limit) |
-| `PORT` | No | `8080` | Web server listening port (automatically bound by Render/Railway) |
-| `SPRING_PROFILES_ACTIVE` | No | `prod` | Active Spring profile |
+| `GITHUB_TOKEN` | Recommended | *None* | GitHub Personal Access Token (5,000 req/hr quota vs 60 public) |
+| `PORT` | No | `8080` | Web server port (dynamically injected by Vercel to 80) |
+| `SPRING_PROFILES_ACTIVE` | No | `prod` | Active Spring Boot profile |
 | `REPOLENS_CACHE_TTL_HOURS` | No | `6` | Analysis cache TTL in hours |
 | `REPOLENS_THROTTLE_USERNAMES_PER_HOUR` | No | `10` | IP rate-limiting threshold |
 | `REPOLENS_MAX_REPOS_PER_USER` | No | `50` | Maximum repositories analyzed per request |
 
-### Deploy on Render (Free Web Service)
-1. Fork or push this repository to GitHub.
-2. In [Render Dashboard](https://dashboard.render.com), select **New Web Service** and connect the repository.
-3. Set **Runtime** to `Java` or `Docker`.
-4. Add Environment Variable:
-   - `GITHUB_TOKEN` = `ghp_yourToken`
-5. Click **Create Web Service**.
-
 ---
 
 ## 📚 References & Documentation
-- **Algorithm Analysis & Viva Defense**: [`docs/ALGORITHMS.md`](docs/ALGORITHMS.md)
-- **Empirical Benchmarks & Proofs**: [`docs/BENCHMARK.md`](docs/BENCHMARK.md)
-- **Scoring Rubric**: Viewable at `/rubric` in the running application.
+- **Formal Project Report**: [`REPORT.md`](REPORT.md)
+- **Model Context Protocol (MCP) Guide**: [`README_MCP.md`](README_MCP.md)
+- **Master LLM Specification**: [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md)
+- **Algorithm Analysis & Proofs**: [`docs/ALGORITHMS.md`](docs/ALGORITHMS.md)
+- **Empirical Benchmarks & Bounds**: [`docs/BENCHMARK.md`](docs/BENCHMARK.md)
+- **Interactive Scoring Rubric**: Viewable at `/rubric` on the running application.
