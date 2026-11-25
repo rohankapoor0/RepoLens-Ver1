@@ -493,5 +493,5 @@ def build_pdf(filename):
     print(f"Successfully generated {filename}")
 
 if __name__ == '__main__':
-    pdf_path = "/Users/rohan/Desktop/Repofy/RepoLens_Algorithms_Guide.pdf"
+    pdf_path = "RepoLens_Algorithms_Guide.pdf"
     build_pdf(pdf_path)

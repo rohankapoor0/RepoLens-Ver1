@@ -26,15 +26,14 @@ mvn clean package -DskipTests=false
 
 The resulting executable fat JAR is located at:
 ```
-/Users/rohan/Desktop/Repofy copy/mcp-server/target/repolens-mcp.jar
+mcp-server/target/repolens-mcp.jar
 ```
 
 ---
 
 ## Client Configuration Snippets
 
-Replace `<PATH_TO_JAR>` with the absolute path to your `repolens-mcp.jar`:
-`/Users/rohan/Desktop/Repofy copy/mcp-server/target/repolens-mcp.jar`
+> **Note for Users:** Replace `/path/to/repolens-mcp.jar` (or `C:\path\to\repolens-mcp.jar` on Windows) with the full absolute path of the extracted JAR file on your machine.
 
 ### 1. Cursor
 
@@ -43,7 +42,7 @@ Replace `<PATH_TO_JAR>` with the absolute path to your `repolens-mcp.jar`:
 - **Linux:** `~/.config/Cursor/User/globalStorage/cursor.mcp/config.json`
 - **Windows:** `%APPDATA%\Cursor\User\globalStorage\cursor.mcp\config.json`
 
-**Snippet:**
+**macOS / Linux Snippet:**
 ```json
 {
   "mcpServers": {
@@ -51,11 +50,28 @@ Replace `<PATH_TO_JAR>` with the absolute path to your `repolens-mcp.jar`:
       "command": "java",
       "args": [
         "-jar",
-        "/Users/rohan/Desktop/Repofy copy/mcp-server/target/repolens-mcp.jar"
+        "/path/to/repolens-mcp.jar"
       ],
       "env": {
-        "GITHUB_TOKEN": "YOUR_TOKEN_HERE",
-        "REPOLENS_CACHE_DIR": ""
+        "GITHUB_TOKEN": "YOUR_TOKEN_HERE"
+      }
+    }
+  }
+}
+```
+
+**Windows Snippet:**
+```json
+{
+  "mcpServers": {
+    "repolens": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "C:\\path\\to\\repolens-mcp.jar"
+      ],
+      "env": {
+        "GITHUB_TOKEN": "YOUR_TOKEN_HERE"
       }
     }
   }
@@ -70,7 +86,7 @@ Replace `<PATH_TO_JAR>` with the absolute path to your `repolens-mcp.jar`:
 - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 
-**Snippet:**
+**macOS / Linux Snippet:**
 ```json
 {
   "mcpServers": {
@@ -78,7 +94,25 @@ Replace `<PATH_TO_JAR>` with the absolute path to your `repolens-mcp.jar`:
       "command": "java",
       "args": [
         "-jar",
-        "/Users/rohan/Desktop/Repofy copy/mcp-server/target/repolens-mcp.jar"
+        "/path/to/repolens-mcp.jar"
+      ],
+      "env": {
+        "GITHUB_TOKEN": "YOUR_TOKEN_HERE"
+      }
+    }
+  }
+}
+```
+
+**Windows Snippet:**
+```json
+{
+  "mcpServers": {
+    "repolens": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "C:\\path\\to\\repolens-mcp.jar"
       ],
       "env": {
         "GITHUB_TOKEN": "YOUR_TOKEN_HERE"
@@ -93,9 +127,14 @@ Replace `<PATH_TO_JAR>` with the absolute path to your `repolens-mcp.jar`:
 ### 3. Claude Code (CLI)
 
 Add via command line:
-```bash
-claude mcp add repolens -- java -jar "/Users/rohan/Desktop/Repofy copy/mcp-server/target/repolens-mcp.jar"
-```
+- **macOS / Linux:**
+  ```bash
+  claude mcp add repolens -- java -jar "/path/to/repolens-mcp.jar"
+  ```
+- **Windows:**
+  ```cmd
+  claude mcp add repolens -- java -jar "C:\path\to\repolens-mcp.jar"
+  ```
 
 Or configure via `~/.claude.json`:
 ```json
@@ -105,7 +144,7 @@ Or configure via `~/.claude.json`:
       "command": "java",
       "args": [
         "-jar",
-        "/Users/rohan/Desktop/Repofy copy/mcp-server/target/repolens-mcp.jar"
+        "/path/to/repolens-mcp.jar"
       ],
       "env": {
         "GITHUB_TOKEN": "YOUR_TOKEN_HERE"
@@ -135,9 +174,14 @@ Or configure via `~/.claude.json`:
 
 The official Model Context Protocol Inspector provides an interactive web UI to test stdio servers, inspect tool definitions, and execute tool calls:
 
-```bash
-npx @modelcontextprotocol/inspector java -jar "/Users/rohan/Desktop/Repofy copy/mcp-server/target/repolens-mcp.jar"
-```
+- **macOS / Linux:**
+  ```bash
+  npx @modelcontextprotocol/inspector java -jar "/path/to/repolens-mcp.jar"
+  ```
+- **Windows:**
+  ```cmd
+  npx @modelcontextprotocol/inspector java -jar "C:\path\to\repolens-mcp.jar"
+  ```
 
 Once launched:
 1. Open the Inspector URL shown in terminal (typically `http://localhost:5173`).

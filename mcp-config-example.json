@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "repolens": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "/path/to/repolens-mcp.jar"
+      ],
+      "env": {
+        "GITHUB_TOKEN": "YOUR_TOKEN_HERE"
+      }
+    }
+  }
+}

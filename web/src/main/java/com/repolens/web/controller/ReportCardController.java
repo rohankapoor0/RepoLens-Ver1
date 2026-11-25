@@ -39,7 +39,7 @@ public class ReportCardController {
         return Map.of(
             "name", "repolens-mcp",
             "version", "1.0.0-SNAPSHOT",
-            "releaseUrl", "https://github.com/repolens/repolens/releases/latest",
+            "releaseUrl", "https://github.com/rohankapoor0/RepoLens-Ver1/releases/latest",
             "jarName", "repolens-mcp.jar",
             "javaRequired", "17+"
         );
