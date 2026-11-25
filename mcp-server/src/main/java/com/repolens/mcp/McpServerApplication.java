@@ -115,22 +115,91 @@ public class McpServerApplication {
      * @return configured McpSyncServer instance
      */
     public static McpSyncServer createServer(Path cacheDir, StdioServerTransport transport) {
+        return createServer(cacheDir, transport, new com.repolens.mcp.client.RepoLensBackendClient());
+    }
+
+    /**
+     * Creates and initializes the synchronous MCP server registering all seven tools.
+     *
+     * @param cacheDir      path to the isolated MCP cache directory
+     * @param transport     transport to bind to
+     * @param backendClient client connecting to the RepoLens backend REST API
+     * @return configured McpSyncServer instance
+     */
+    public static McpSyncServer createServer(Path cacheDir, StdioServerTransport transport, com.repolens.mcp.client.RepoLensBackendClient backendClient) {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        com.repolens.mcp.tools.RepoLensToolHandlers handlers = new com.repolens.mcp.tools.RepoLensToolHandlers(backendClient, objectMapper);
 
         return McpServer.sync(transport)
                 .serverInfo(SERVER_NAME, SERVER_VERSION)
                 .capabilities(McpSchema.ServerCapabilities.builder()
                         .tools(true)
                         .build())
+                // 1. analyze_profile(username)
+                .tool(
+                        new McpSchema.Tool(
+                                "analyze_profile",
+                                "Analyzes an entire GitHub profile across all public repositories, computing hygiene scores, distribution metrics, and technology observations.",
+                                "{\"type\":\"object\",\"properties\":{\"username\":{\"type\":\"string\",\"description\":\"Target GitHub username (e.g. 'octocat' or '@octocat')\"}},\"required\":[\"username\"]}"
+                        ),
+                        handlers::handleAnalyzeProfile
+                )
+                // 2. score_repo(owner, repository)
+                .tool(
+                        new McpSchema.Tool(
+                                "score_repo",
+                                "Calculates the deterministic quality and hygiene score for a specific GitHub repository with category breakdowns and deductions.",
+                                "{\"type\":\"object\",\"properties\":{\"owner\":{\"type\":\"string\",\"description\":\"GitHub repository owner (user or organization)\"},\"repository\":{\"type\":\"string\",\"description\":\"GitHub repository name\"}},\"required\":[\"owner\",\"repository\"]}"
+                        ),
+                        handlers::handleScoreRepo
+                )
+                // 3. compare_repos(repositories)
+                .tool(
+                        new McpSchema.Tool(
+                                "compare_repos",
+                                "Compares multiple GitHub repositories side-by-side across scores, categories, engineering hygiene, and detected technologies.",
+                                "{\"type\":\"object\",\"properties\":{\"repositories\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"List of repositories to compare in 'owner/repo' format (e.g. ['facebook/react', 'vuejs/core'])\"}},\"required\":[\"repositories\"]}"
+                        ),
+                        handlers::handleCompareRepos
+                )
+                // 4. fix_plan(username)
+                .tool(
+                        new McpSchema.Tool(
+                                "fix_plan",
+                                "Generates an optimal, prioritized remediation fix plan across repositories using Greedy Weighted Set Cover.",
+                                "{\"type\":\"object\",\"properties\":{\"username\":{\"type\":\"string\",\"description\":\"Target GitHub username\"}},\"required\":[\"username\"]}"
+                        ),
+                        handlers::handleFixPlan
+                )
+                // 5. explain_deduction(owner, repository, category)
+                .tool(
+                        new McpSchema.Tool(
+                                "explain_deduction",
+                                "Explains point deductions for a repository within a specific scoring category, providing rule details, evidence, and remediation steps.",
+                                "{\"type\":\"object\",\"properties\":{\"owner\":{\"type\":\"string\",\"description\":\"GitHub repository owner\"},\"repository\":{\"type\":\"string\",\"description\":\"GitHub repository name\"},\"category\":{\"type\":\"string\",\"description\":\"Scoring category: SAFETY, DOCUMENTATION, ENGINEERING_HYGIENE, STRUCTURE, LICENSING_COMMUNITY, or MAINTENANCE\"}},\"required\":[\"owner\",\"repository\",\"category\"]}"
+                        ),
+                        handlers::handleExplainDeduction
+                )
+                // 6. find_duplicates(username)
+                .tool(
+                        new McpSchema.Tool(
+                                "find_duplicates",
+                                "Detects duplicate repositories, code forks, and boilerplate clones for a user using Disjoint Set Union clustering.",
+                                "{\"type\":\"object\",\"properties\":{\"username\":{\"type\":\"string\",\"description\":\"Target GitHub username\"}},\"required\":[\"username\"]}"
+                        ),
+                        handlers::handleFindDuplicates
+                )
+                // 7. get_status()
                 .tool(
                         new McpSchema.Tool(
                                 "get_status",
                                 "Returns RepoLens MCP status, token detection, rate limits, and cache directory (read-only).",
                                 "{\"type\":\"object\",\"properties\":{}}"
                         ),
-                        arguments -> handleGetStatus(cacheDir, objectMapper)
+                        arguments -> handlers.handleGetStatus(cacheDir)
                 )
                 .build();
     }
