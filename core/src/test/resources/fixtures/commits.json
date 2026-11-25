@@ -1,0 +1,30 @@
+[
+  {
+    "sha": "c1a2b3c4d5",
+    "commit": {
+      "author": {
+        "name": "Rohan",
+        "date": "2026-06-01T14:00:00Z"
+      },
+      "committer": {
+        "name": "Rohan",
+        "date": "2026-06-01T14:00:00Z"
+      },
+      "message": "Fix quality rubric"
+    }
+  },
+  {
+    "sha": "e5f6a7b8c9",
+    "commit": {
+      "author": {
+        "name": "Rohan",
+        "date": "2026-05-20T10:00:00Z"
+      },
+      "committer": {
+        "name": "Rohan",
+        "date": "2026-05-20T10:00:00Z"
+      },
+      "message": "Add test suites"
+    }
+  }
+]

@@ -1,0 +1,56 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.reconcile-spring
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### macOS ###
+.DS_Store
+*.DS_Store
+**/.DS_Store
+
+### RepoLens H2 file database and local cache ###
+data/
+**/data/
+.repolens/
+**/.repolens/
+*.mv.db
+*.trace.db
+
+### Secrets & Environment variables ###
+.env
+.env.*
+*.env
+*.key
+*.pem
+*.pfx
+
+### Logs and Maven Shade artifacts ###
+*.log
+**/logs/
+dependency-reduced-pom.xml
+mcp-server/dependency-reduced-pom.xml

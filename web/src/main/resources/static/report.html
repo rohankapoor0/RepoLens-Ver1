@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Developer Report Card — RepoLens</title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>📋</text></svg>">
+  <style>
+    :root {
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --bg-primary: #090d13;
+      --bg-secondary: #0d1117;
+      --bg-card: #161b22;
+      --border-color: #30363d;
+      --border-muted: #21262d;
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --accent-blue: #2f81f7;
+      --accent-glow: rgba(47, 129, 247, 0.25);
+      --score-green: #3fb950;
+      --score-green-bg: rgba(63, 185, 80, 0.15);
+      --score-blue: #58a6ff;
+      --score-blue-bg: rgba(88, 166, 255, 0.15);
+      --score-yellow: #d29922;
+      --score-yellow-bg: rgba(210, 153, 34, 0.15);
+      --score-red: #f85149;
+      --score-red-bg: rgba(248, 81, 73, 0.15);
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #f6f8fa;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --border-color: #d0d7de;
+      --border-muted: #e1e4e8;
+      --text-primary: #1f2328;
+      --text-secondary: #656d76;
+      --text-muted: #8c959f;
+      --accent-blue: #0969da;
+      --accent-glow: rgba(9, 105, 218, 0.15);
+      --score-green: #1a7f37;
+      --score-green-bg: #dafbe1;
+      --score-blue: #0969da;
+      --score-blue-bg: #ddf4ff;
+      --score-yellow: #9a6700;
+      --score-yellow-bg: #fff8c5;
+      --score-red: #cf222e;
+      --score-red-bg: #ffebe9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .navbar {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      text-decoration: none;
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 1.15rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .container {
+      max-width: 960px;
+      width: 100%;
+      margin: 32px auto;
+      padding: 0 20px;
+      flex: 1;
+    }
+
+    .report-header-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--accent-glow);
+      border: 2px solid var(--accent-blue);
+      color: var(--accent-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 800;
+    }
+
+    .username {
+      font-size: 1.45rem;
+      font-weight: 800;
+    }
+
+    .share-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .share-btn:hover {
+      border-color: var(--accent-blue);
+    }
+
+    .neutral-assessment {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--accent-blue);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 18px;
+    }
+
+    .metric-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .metric-val {
+      font-size: 2rem;
+      font-weight: 800;
+    }
+
+    .repos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+
+    .repo-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .repo-title {
+      font-weight: 700;
+      color: var(--accent-blue);
+      font-size: 1rem;
+      margin-bottom: 4px;
+      word-break: break-all;
+    }
+
+    .score-badge {
+      display: inline-block;
+      font-weight: 800;
+      font-size: 0.85rem;
+      padding: 3px 10px;
+      border-radius: 12px;
+    }
+
+    .repo-meta {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .footer {
+      border-top: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      padding: 16px;
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: auto;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+
+<body>
+  <header class="navbar">
+    <a href="/" class="brand">
+      <span>RepoLens</span>
+      <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">• Public Report Card</span>
+    </a>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <a href="/rubric"
+        style="color: var(--text-secondary); text-decoration: none; font-size: 0.88rem; align-self: center;">Scoring
+        Rubric</a>
+      <a href="/mcp.html"
+        style="color: var(--accent-blue); text-decoration: none; font-size: 0.88rem; font-weight: 600; align-self: center;">MCP</a>
+      <button class="share-btn" onclick="toggleTheme()">☀️ / 🌙</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="loading" class="loading">Loading developer report card...</div>
+    <div id="content" style="display: none;">
+      <div class="report-header-card">
+        <div class="user-info">
+          <div id="userAvatar" class="avatar">U</div>
+          <div>
+            <div id="usernameHeading" class="username">username</div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">Repository Hygiene & Engineering Standards Report
+            </div>
+          </div>
+        </div>
+        <button class="share-btn" onclick="copyShareLink()">📋 Share Report</button>
+      </div>
+
+      <div id="neutralSummary" class="neutral-assessment">
+        This public evaluation summarizes objective repository structure, documentation completeness, and community
+        licensing standards across all evaluated public repositories.
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Repositories Evaluated</div>
+          <div id="totalReposVal" class="metric-val">0</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Median Hygiene Score</div>
+          <div id="medianScoreVal" class="metric-val">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Average Score</div>
+          <div id="averageScoreVal" class="metric-val">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Standard Compliance</div>
+          <div id="complianceBandVal" class="metric-val" style="font-size: 1.4rem;">Good</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 14px; font-weight: 700; font-size: 1.1rem;">Evaluated Repositories</div>
+      <div id="reposGrid" class="repos-grid"></div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div style="display: flex; justify-content: space-between; align-items: center; max-width: 960px; margin: 0 auto; flex-wrap: wrap; gap: 12px;">
+      <span>RepoLens — College Project • Deterministic Evaluation • Zero LLM • Public Data Only</span>
+      <div style="display: flex; gap: 14px;">
+        <a href="/" style="color: var(--text-muted); text-decoration: none;">Home</a>
+        <a href="/rubric" style="color: var(--text-muted); text-decoration: none;">Rubric</a>
+        <a href="/mcp.html" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">MCP Server</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+    }
+
+    function copyShareLink() {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Report card URL copied to clipboard!');
+    }
+
+    function getScoreColor(score) {
+      if (score >= 80) return { color: 'var(--score-green)', bg: 'var(--score-green-bg)' };
+      if (score >= 65) return { color: 'var(--score-blue)', bg: 'var(--score-blue-bg)' };
+      if (score >= 50) return { color: 'var(--score-yellow)', bg: 'var(--score-yellow-bg)' };
+      return { color: 'var(--score-red)', bg: 'var(--score-red-bg)' };
+    }
+
+    async function initReport() {
+      const pathParts = window.location.pathname.split('/');
+      let username = pathParts[2];
+      if (!username) {
+        const params = new URLSearchParams(window.location.search);
+        username = params.get('u') || 'rohankapoor0';
+      }
+      if (username && username.startsWith('@')) {
+        username = username.substring(1).trim();
+      }
+
+      try {
+        const res = await fetch(`/api/analyze/${encodeURIComponent(username)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Report not found');
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+
+        document.getElementById('userAvatar').textContent = data.username.charAt(0).toUpperCase();
+        document.getElementById('usernameHeading').textContent = data.username;
+        document.title = `${data.username}'s Report Card — RepoLens`;
+
+        const stats = data.stats || {};
+        document.getElementById('totalReposVal').textContent = stats.reposAnalyzed || 0;
+        document.getElementById('medianScoreVal').textContent = stats.medianScore || '--';
+        document.getElementById('averageScoreVal').textContent = stats.averageScore || '--';
+
+        const med = stats.medianScore || 0;
+        let bandText = 'Needs Work';
+        if (med >= 85) bandText = 'Excellent';
+        else if (med >= 70) bandText = 'Good';
+        else if (med >= 50) bandText = 'Fair';
+        document.getElementById('complianceBandVal').textContent = bandText;
+
+        const grid = document.getElementById('reposGrid');
+        grid.innerHTML = '';
+        (data.rankedRepos || []).forEach(r => {
+          const card = document.createElement('div');
+          card.className = 'repo-card';
+
+          const titleDiv = document.createElement('div');
+          titleDiv.className = 'repo-title';
+          titleDiv.textContent = r.name;
+          card.appendChild(titleDiv);
+
+          const colors = getScoreColor(r.score);
+          const scoreBadge = document.createElement('span');
+          scoreBadge.className = 'score-badge';
+          scoreBadge.style.color = colors.color;
+          scoreBadge.style.backgroundColor = colors.bg;
+          scoreBadge.textContent = `${r.score} / 100`;
+          card.appendChild(scoreBadge);
+
+          const meta = document.createElement('div');
+          meta.className = 'repo-meta';
+          const lang = document.createElement('span');
+          lang.textContent = r.language || 'Plain text';
+          const issues = document.createElement('span');
+          issues.textContent = `${r.deductionsCount || 0} recommendations`;
+          meta.appendChild(lang);
+          meta.appendChild(issues);
+          card.appendChild(meta);
+
+          grid.appendChild(card);
+        });
+      } catch (e) {
+        document.getElementById('loading').textContent = 'Error loading report card: ' + e.message;
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', initReport);
+  </script>
+</body>
+
+</html>

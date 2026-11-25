@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RepoLens MCP — Model Context Protocol for AI Coding Assistants</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            'ink': '#111318',
+            'ink-muted': '#4B5563',
+            'canvas': '#F5F6FA',
+            'card': '#FFFFFF',
+            'card-subtle': '#F9FAFB',
+            'hairline': '#E5E7EB',
+            'hairline-subtle': '#F0F2F5',
+            'accent-blue': '#2563EB',
+            'accent-indigo': '#6366F1',
+            'badge-excellent-bg': '#DCFCE7',
+            'badge-excellent-fg': '#166534',
+            'badge-good-bg': '#DBEAFE',
+            'badge-good-fg': '#1E40AF',
+            'badge-fair-bg': '#FEF3C7',
+            'badge-fair-fg': '#92400E',
+            'badge-needs-bg': '#FEE2E2',
+            'badge-needs-fg': '#991B1B',
+            'dark-canvas': '#0B0E14',
+            'dark-card': '#141820',
+            'dark-card-subtle': '#1C222D',
+            'dark-ink': '#F3F4F6',
+            'dark-ink-muted': '#9CA3AF',
+            'dark-hairline': '#262C38',
+          },
+          fontFamily: {
+            'display': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'sans-serif'],
+            'headline': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'sans-serif'],
+            'title': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'sans-serif'],
+            'body': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', 'sans-serif'],
+            'label': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', 'sans-serif'],
+            'mono': ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', '"Liberation Mono"', '"Courier New"', 'monospace'],
+          },
+          fontSize: {
+            'display-lg': ['48px', { lineHeight: '54px', letterSpacing: '-1.4px', fontWeight: '700' }],
+            'display-lg-mobile': ['32px', { lineHeight: '38px', letterSpacing: '-0.8px', fontWeight: '700' }],
+            'headline-lg': ['28px', { lineHeight: '34px', letterSpacing: '-0.6px', fontWeight: '600' }],
+            'headline-md': ['22px', { lineHeight: '28px', letterSpacing: '-0.4px', fontWeight: '600' }],
+            'title-md': ['17px', { lineHeight: '24px', letterSpacing: '-0.2px', fontWeight: '600' }],
+            'body-lg': ['17px', { lineHeight: '26px', letterSpacing: '-0.1px', fontWeight: '400' }],
+            'body-md': ['14px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '400' }],
+            'body-sm': ['13px', { lineHeight: '19px', letterSpacing: '0px', fontWeight: '400' }],
+            'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '-0.1px', fontWeight: '500' }],
+            'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0px', fontWeight: '500' }],
+            'label-sm': ['11px', { lineHeight: '16px', letterSpacing: '0.1px', fontWeight: '500' }],
+          },
+          borderRadius: {
+            'sm': '8px',
+            'DEFAULT': '10px',
+            'md': '16px',
+            'lg': '22px',
+            'xl': '28px',
+            'full': '9999px',
+          },
+          spacing: {
+            'gutter-xs': '4px',
+            'gutter-sm': '8px',
+            'gutter-md': '16px',
+            'gutter-lg': '24px',
+            'gutter-xl': '32px',
+            'section': '64px',
+          },
+        },
+      },
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block"
+    rel="stylesheet">
+  <style>
+    .material-symbols-outlined {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      line-height: 1 !important;
+      box-sizing: content-box;
+      overflow: hidden;
+      white-space: nowrap;
+      direction: ltr;
+      vertical-align: middle;
+    }
+
+    .hero-pastel-wash {
+      background: linear-gradient(145deg, #FFFFFF 0%, #F6F4FC 52%, #EDF2FF 100%);
+    }
+
+    .dark .hero-pastel-wash {
+      background: linear-gradient(145deg, #141820 0%, #171B26 52%, #161D2E 100%);
+    }
+
+    .code-scroll::-webkit-scrollbar {
+      height: 6px;
+    }
+    .code-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .code-scroll::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.4);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+
+<body
+  class="min-h-screen bg-canvas dark:bg-dark-canvas text-ink dark:text-dark-ink font-body antialiased transition-colors duration-150">
+
+  <!-- Apple-inspired Frosted Header -->
+  <header
+    class="sticky top-0 z-30 border-b border-hairline/80 dark:border-dark-hairline bg-white/80 dark:bg-dark-canvas/80 backdrop-blur-xl">
+    <div
+      class="max-w-7xl mx-auto px-gutter-md sm:px-gutter-lg py-gutter-sm flex flex-wrap items-center justify-between gap-gutter-md">
+      <a href="/"
+        class="flex items-center gap-gutter-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink rounded-DEFAULT">
+        <div class="w-8 h-8 rounded-full bg-ink dark:bg-white flex items-center justify-center">
+          <span class="material-symbols-outlined text-[17px] text-white dark:text-ink" aria-hidden="true">radar</span>
+        </div>
+        <span class="font-headline text-title-md text-ink dark:text-dark-ink tracking-tight">RepoLens</span>
+      </a>
+
+      <!-- Primary Navigation -->
+      <nav aria-label="Primary" class="hidden md:flex items-center gap-gutter-lg">
+        <a href="/"
+          class="font-label text-label-md text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-white transition-colors">Overview</a>
+        <a href="/rubric.html"
+          class="font-label text-label-md text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-white transition-colors">Rubric</a>
+        <a href="#how-it-works"
+          class="font-label text-label-md text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-white transition-colors">Architecture</a>
+        <a href="#tools"
+          class="font-label text-label-md text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-white transition-colors">Tools</a>
+        <a href="#setup"
+          class="font-label text-label-md text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-white transition-colors">Config Generator</a>
+        <a href="/mcp.html"
+          aria-current="page"
+          class="inline-flex items-center gap-1 font-label text-label-md text-accent-blue dark:text-blue-400 font-semibold transition-colors">
+          <span class="w-1.5 h-1.5 rounded-full bg-accent-blue"></span>
+          MCP
+        </a>
+      </nav>
+
+      <!-- Right Controls -->
+      <div class="flex items-center gap-gutter-sm">
+        <a href="/repolens-clean/RepoLensClean.html"
+          class="inline-flex items-center justify-center px-gutter-md py-gutter-xs rounded-full bg-ink dark:bg-white text-white dark:text-ink font-label text-label-md hover:opacity-90 transition-opacity">
+          Open Evaluator
+        </a>
+        <button id="theme-toggle-btn" type="button" aria-label="Toggle light and dark theme"
+          class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-white transition-colors">
+          <span id="theme-toggle-icon" class="material-symbols-outlined text-[18px]" aria-hidden="true">dark_mode</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top"
+    class="max-w-7xl mx-auto px-gutter-md sm:px-gutter-lg py-gutter-lg sm:py-gutter-xl flex flex-col gap-section">
+
+    <!-- Hero Section -->
+    <section
+      class="hero-pastel-wash rounded-xl border border-hairline dark:border-dark-hairline shadow-[0_6px_32px_rgba(17,19,24,0.04)] px-gutter-md sm:px-gutter-xl pt-gutter-xl pb-gutter-xl flex flex-col items-center text-center gap-gutter-lg">
+      <div class="flex flex-col items-center gap-gutter-md max-w-3xl">
+        <div class="inline-flex items-center gap-2 px-gutter-md py-gutter-xs rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline font-label text-label-md text-ink-muted dark:text-dark-ink-muted shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-accent-blue animate-pulse" aria-hidden="true"></span>
+          <span>Model Context Protocol • Local Stdio • Zero Open Ports</span>
+        </div>
+        <h1 class="font-display text-display-lg-mobile md:text-display-lg text-ink dark:text-dark-ink text-balance">
+          RepoLens in your IDE.
+        </h1>
+        <p class="font-body text-body-lg text-ink-muted dark:text-dark-ink-muted max-w-2xl text-pretty">
+          Bring deterministic engineering hygiene scoring, Greedy Set Cover fix plans, and DSU duplicate detection directly into <strong>Cursor</strong>, <strong>Claude Desktop</strong>, and <strong>Claude Code</strong>.
+        </p>
+
+        <div class="flex flex-wrap items-center justify-center gap-gutter-sm pt-gutter-xs">
+          <a id="hero-download-btn" href="#download"
+            class="inline-flex items-center justify-center gap-2 px-gutter-lg py-gutter-sm rounded-full bg-ink dark:bg-white text-white dark:text-ink font-label text-label-lg hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink">
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">download</span>
+            <span>Download JAR</span>
+          </a>
+          <a href="#setup"
+            class="inline-flex items-center justify-center gap-2 px-gutter-lg py-gutter-sm rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline text-ink dark:text-dark-ink font-label text-label-lg hover:bg-card-subtle dark:hover:bg-dark-card-subtle transition-colors">
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">tune</span>
+            <span>Generate Config</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 1: What is the RepoLens MCP? -->
+    <section id="what-is-mcp" class="flex flex-col gap-gutter-lg">
+      <header class="flex flex-col items-center text-center gap-gutter-xs max-w-2xl mx-auto">
+        <span class="font-label text-label-md text-accent-blue">Overview</span>
+        <h2 class="font-headline text-headline-lg text-ink dark:text-dark-ink">What is the RepoLens MCP?</h2>
+        <p class="font-body text-body-md text-ink-muted dark:text-dark-ink-muted text-pretty">
+          The Model Context Protocol (MCP) is an open standard that allows AI assistants to safely call local tools and query domain-specific engines.
+        </p>
+      </header>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter-md">
+        <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col gap-gutter-sm">
+          <div class="w-10 h-10 rounded-full bg-accent-blue/10 flex items-center justify-center text-accent-blue">
+            <span class="material-symbols-outlined text-[22px]" aria-hidden="true">terminal</span>
+          </div>
+          <h3 class="font-headline text-headline-md text-ink dark:text-dark-ink text-base font-semibold">100% Local Stdio</h3>
+          <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+            The JAR runs directly on your computer via standard input/output. No web service to host, no daemon process, and no exposed listening ports.
+          </p>
+        </article>
+
+        <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col gap-gutter-sm">
+          <div class="w-10 h-10 rounded-full bg-accent-blue/10 flex items-center justify-center text-accent-blue">
+            <span class="material-symbols-outlined text-[22px]" aria-hidden="true">fact_check</span>
+          </div>
+          <h3 class="font-headline text-headline-md text-ink dark:text-dark-ink text-base font-semibold">Deterministic Scoring</h3>
+          <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+            Scores come from our 100-point rule engine, not AI guesswork. Your LLM receives structured, verifiable data it can reason about with confidence.
+          </p>
+        </article>
+
+        <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col gap-gutter-sm">
+          <div class="w-10 h-10 rounded-full bg-accent-blue/10 flex items-center justify-center text-accent-blue">
+            <span class="material-symbols-outlined text-[22px]" aria-hidden="true">auto_fix_high</span>
+          </div>
+          <h3 class="font-headline text-headline-md text-ink dark:text-dark-ink text-base font-semibold">Greedy Set Cover Plans</h3>
+          <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+            Ask your assistant how to improve repository hygiene. RepoLens calculates the minimal set of remediation actions to maximize score recovery.
+          </p>
+        </article>
+
+        <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col gap-gutter-sm">
+          <div class="w-10 h-10 rounded-full bg-accent-blue/10 flex items-center justify-center text-accent-blue">
+            <span class="material-symbols-outlined text-[22px]" aria-hidden="true">shield</span>
+          </div>
+          <h3 class="font-headline text-headline-md text-ink dark:text-dark-ink text-base font-semibold">Privacy First</h3>
+          <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+            Inspects public GitHub API metadata only. Never clones repository sources, never uploads tokens, and never sends telemetry to outside servers.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Section 2: Requirements -->
+    <section id="requirements" class="flex flex-col gap-gutter-lg">
+      <header class="flex flex-col items-center text-center gap-gutter-xs max-w-2xl mx-auto">
+        <span class="font-label text-label-md text-accent-blue">Prerequisites</span>
+        <h2 class="font-headline text-headline-lg text-ink dark:text-dark-ink">Requirements</h2>
+      </header>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter-lg">
+        <!-- Java 17+ -->
+        <div class="p-gutter-xl rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col gap-gutter-md">
+          <div class="flex items-center gap-gutter-sm">
+            <span class="w-9 h-9 rounded-full bg-accent-blue/10 text-accent-blue flex items-center justify-center font-bold">1</span>
+            <h3 class="font-headline text-title-md text-ink dark:text-dark-ink">Java 17+</h3>
+          </div>
+          <p class="font-body text-body-md text-ink-muted dark:text-dark-ink-muted">
+            The MCP server is packaged as an executable standalone JAR requiring Java 17 (JRE or JDK) or higher on your system <code class="font-mono text-xs px-1.5 py-0.5 rounded bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline">PATH</code>.
+          </p>
+          <div class="mt-auto p-gutter-sm rounded bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline font-mono text-xs text-ink-muted dark:text-dark-ink-muted">
+            Verify: <code>java -version</code>
+          </div>
+        </div>
+
+        <!-- MCP Client -->
+        <div class="p-gutter-xl rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col gap-gutter-md">
+          <div class="flex items-center gap-gutter-sm">
+            <span class="w-9 h-9 rounded-full bg-accent-blue/10 text-accent-blue flex items-center justify-center font-bold">2</span>
+            <h3 class="font-headline text-title-md text-ink dark:text-dark-ink">MCP-Capable Client</h3>
+          </div>
+          <p class="font-body text-body-md text-ink-muted dark:text-dark-ink-muted">
+            Any client supporting Model Context Protocol stdio servers, such as <strong>Cursor</strong>, <strong>Claude Desktop</strong>, or <strong>Claude Code</strong>.
+          </p>
+          <div class="mt-auto p-gutter-sm rounded bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline font-mono text-xs text-ink-muted dark:text-dark-ink-muted">
+            Cursor • Claude Desktop • Claude Code
+          </div>
+        </div>
+
+        <!-- Optional GitHub Token -->
+        <div class="p-gutter-xl rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col gap-gutter-md">
+          <div class="flex items-center gap-gutter-sm">
+            <span class="w-9 h-9 rounded-full bg-accent-blue/10 text-accent-blue flex items-center justify-center font-bold">3</span>
+            <h3 class="font-headline text-title-md text-ink dark:text-dark-ink">GitHub Token (Optional)</h3>
+          </div>
+          <p class="font-body text-body-md text-ink-muted dark:text-dark-ink-muted">
+            Unauthenticated GitHub API allows <strong>60 requests/hour</strong>. A standard Personal Access Token (classic or fine-grained with public read only) raises this limit to <strong>5,000 requests/hour</strong>.
+          </p>
+          <div class="mt-auto p-gutter-sm rounded bg-badge-good-bg text-badge-good-fg font-mono text-xs p-gutter-xs rounded text-center">
+            Zero token required for initial testing
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: How It Works Diagram -->
+    <section id="how-it-works" class="flex flex-col gap-gutter-lg">
+      <header class="flex flex-col items-center text-center gap-gutter-xs max-w-2xl mx-auto">
+        <span class="font-label text-label-md text-accent-blue">Architecture</span>
+        <h2 class="font-headline text-headline-lg text-ink dark:text-dark-ink">How It Works</h2>
+        <p class="font-body text-body-md text-ink-muted dark:text-dark-ink-muted text-pretty">
+          A purely local stdio process bridging your AI model and GitHub's REST API.
+        </p>
+      </header>
+
+      <!-- Architecture SVG Diagram Card -->
+      <div class="p-gutter-lg sm:p-gutter-xl rounded-xl bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col items-center gap-gutter-md">
+        <div class="w-full max-w-4xl overflow-x-auto py-gutter-sm">
+          <svg viewBox="0 0 880 220" class="w-full min-w-[680px] h-auto select-none" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="RepoLens MCP Architecture diagram">
+            <!-- Node 1: AI Client / IDE -->
+            <rect x="20" y="45" width="230" height="130" rx="16" class="fill-card-subtle dark:fill-dark-card-subtle stroke-hairline dark:stroke-dark-hairline" stroke-width="2"/>
+            <circle cx="55" cy="80" r="16" class="fill-accent-blue/15"/>
+            <path d="M47 80 L52 75 L63 85" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <text x="82" y="85" class="fill-ink dark:fill-dark-ink font-semibold" font-size="16" font-family="Inter, sans-serif">AI Client / IDE</text>
+            <text x="82" y="105" class="fill-ink-muted dark:fill-dark-ink-muted" font-size="12" font-family="Inter, sans-serif">Cursor • Claude Desktop • Code</text>
+            <rect x="36" y="125" width="198" height="28" rx="6" class="fill-card dark:fill-dark-card stroke-hairline dark:stroke-dark-hairline" stroke-width="1"/>
+            <text x="135" y="143" text-anchor="middle" class="fill-ink-muted dark:fill-dark-ink-muted font-mono" font-size="11">MCP Host / Client SDK</text>
+
+            <!-- Arrow 1: Stdio -->
+            <path d="M250 110 L330 110" stroke="#2563EB" stroke-width="2.5" stroke-dasharray="4 4" class="animate-pulse"/>
+            <polygon points="330,105 342,110 330,115" fill="#2563EB"/>
+            <rect x="255" y="68" width="80" height="22" rx="4" class="fill-badge-good-bg"/>
+            <text x="295" y="83" text-anchor="middle" class="fill-badge-good-fg font-mono font-semibold" font-size="10">stdio</text>
+            <text x="295" y="132" text-anchor="middle" class="fill-ink-muted dark:fill-dark-ink-muted font-mono" font-size="10">JSON-RPC</text>
+
+            <!-- Node 2: RepoLens MCP Server -->
+            <rect x="345" y="30" width="240" height="160" rx="18" class="fill-card-subtle dark:fill-dark-card-subtle stroke-accent-blue" stroke-width="2"/>
+            <rect x="360" y="44" width="210" height="32" rx="8" class="fill-accent-blue text-white"/>
+            <text x="465" y="65" text-anchor="middle" fill="#FFFFFF" class="font-semibold" font-size="13" font-family="Inter, sans-serif">repolens-mcp.jar (Local)</text>
+            
+            <g transform="translate(360, 88)">
+              <rect width="210" height="24" rx="4" class="fill-card dark:fill-dark-card stroke-hairline dark:stroke-dark-hairline"/>
+              <text x="10" y="16" class="fill-ink dark:fill-dark-ink font-mono" font-size="10">⚡ 100-Pt Deterministic Rubric</text>
+            </g>
+            <g transform="translate(360, 118)">
+              <rect width="210" height="24" rx="4" class="fill-card dark:fill-dark-card stroke-hairline dark:stroke-dark-hairline"/>
+              <text x="10" y="16" class="fill-ink dark:fill-dark-ink font-mono" font-size="10">🎯 Greedy Set Cover Fix Plan</text>
+            </g>
+            <g transform="translate(360, 148)">
+              <rect width="210" height="24" rx="4" class="fill-card dark:fill-dark-card stroke-hairline dark:stroke-dark-hairline"/>
+              <text x="10" y="16" class="fill-ink dark:fill-dark-ink font-mono" font-size="10">🔗 DSU Duplicate Detection</text>
+            </g>
+
+            <!-- Arrow 2: GitHub API -->
+            <path d="M585 110 L655 110" stroke="#2563EB" stroke-width="2.5"/>
+            <polygon points="655,105 667,110 655,115" fill="#2563EB"/>
+            <rect x="590" y="68" width="70" height="22" rx="4" class="fill-badge-excellent-bg"/>
+            <text x="625" y="83" text-anchor="middle" class="fill-badge-excellent-fg font-mono font-semibold" font-size="10">HTTPS</text>
+            <text x="625" y="132" text-anchor="middle" class="fill-ink-muted dark:fill-dark-ink-muted font-mono" font-size="10">ETag Caching</text>
+
+            <!-- Node 3: GitHub API -->
+            <rect x="670" y="45" width="190" height="130" rx="16" class="fill-card-subtle dark:fill-dark-card-subtle stroke-hairline dark:stroke-dark-hairline" stroke-width="2"/>
+            <circle cx="705" cy="80" r="16" class="fill-ink dark:fill-white text-white dark:text-ink"/>
+            <path d="M705 68 C698.37 68 693 73.37 693 80 C693 85.3 696.44 89.8 701.2 91.38 C701.8 91.5 702.02 91.12 702.02 90.8 C702.02 90.52 702 89.5 702 88.5 C698.67 89.22 697.97 87.05 697.97 87.05 C697.43 85.67 696.64 85.3 696.64 85.3 C695.55 84.56 696.72 84.58 696.72 84.58 C697.92 84.66 698.55 85.82 698.55 85.82 C699.62 87.66 701.36 87.12 702.05 86.82 C702.16 86.04 702.47 85.52 702.82 85.22 C700.16 84.92 697.37 83.89 697.37 79.3 C697.37 78 697.84 76.94 698.6 76.12 C698.48 75.82 698.07 74.58 698.72 72.9 C698.72 72.9 699.72 72.58 702 74.13 C702.95 73.87 703.97 73.74 705 73.73 C706.03 73.74 707.05 73.87 708 74.13 C710.28 72.58 711.28 72.9 711.28 72.9 C711.93 74.58 711.52 75.82 711.4 76.12 C712.17 76.94 712.63 78 712.63 79.3 C712.63 83.9 709.83 84.91 707.16 85.21 C707.6 85.59 708 86.34 708 87.49 C708 89.14 707.98 90.47 707.98 90.8 C707.98 91.13 708.2 91.51 708.81 91.38 C713.56 89.79 717 85.3 717 80 C717 73.37 711.63 68 705 68 Z" class="fill-white dark:fill-ink"/>
+            <text x="730" y="85" class="fill-ink dark:fill-dark-ink font-semibold" font-size="16" font-family="Inter, sans-serif">GitHub API</text>
+            <text x="686" y="112" class="fill-ink-muted dark:fill-dark-ink-muted" font-size="12" font-family="Inter, sans-serif">Public Repo Metadata</text>
+            <rect x="686" y="125" width="158" height="28" rx="6" class="fill-card dark:fill-dark-card stroke-hairline dark:stroke-dark-hairline" stroke-width="1"/>
+            <text x="765" y="143" text-anchor="middle" class="fill-ink-muted dark:fill-dark-ink-muted font-mono" font-size="11">5,000 / hr (token)</text>
+          </svg>
+        </div>
+
+        <div class="px-gutter-md py-gutter-xs rounded-full bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline text-center">
+          <p class="font-body text-body-sm font-medium text-ink-muted dark:text-dark-ink-muted">
+            runs on your computer, no hosting, no open port
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Download -->
+    <section id="download" class="flex flex-col gap-gutter-lg">
+      <header class="flex flex-col items-center text-center gap-gutter-xs max-w-2xl mx-auto">
+        <span class="font-label text-label-md text-accent-blue">Distribution</span>
+        <h2 class="font-headline text-headline-lg text-ink dark:text-dark-ink">Download RepoLens MCP</h2>
+        <p class="font-body text-body-md text-ink-muted dark:text-dark-ink-muted">
+          Pre-built standalone JAR binaries are hosted on GitHub Releases.
+        </p>
+      </header>
+
+      <div class="p-gutter-xl rounded-xl bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col sm:flex-row items-center justify-between gap-gutter-lg">
+        <div class="flex items-center gap-gutter-md">
+          <div class="w-14 h-14 rounded-2xl bg-ink dark:bg-white text-white dark:text-ink flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[30px]" aria-hidden="true">deployed_code</span>
+          </div>
+          <div class="flex flex-col gap-gutter-xs">
+            <div class="flex items-center gap-2">
+              <h3 class="font-headline text-headline-md text-ink dark:text-dark-ink text-lg font-semibold">repolens-mcp.jar</h3>
+              <span class="px-2 py-0.5 rounded-full text-xs font-mono font-medium bg-badge-good-bg text-badge-good-fg">v1.0.0 (Latest)</span>
+            </div>
+            <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+              Standard fat-JAR containing Spring Boot / Model Context Protocol stdio runner with embedded dependencies.
+            </p>
+          </div>
+        </div>
+
+        <div class="shrink-0 flex flex-col sm:flex-row items-center gap-gutter-sm w-full sm:w-auto">
+          <a id="release-link-btn" href="https://github.com/repolens/repolens/releases/latest" target="_blank" rel="noopener noreferrer"
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-gutter-lg py-gutter-sm rounded-full bg-ink dark:bg-white text-white dark:text-ink font-label text-label-lg hover:opacity-90 transition-opacity">
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">open_in_new</span>
+            <span>GitHub Releases</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5: Config Snippet Generator -->
+    <section id="setup" class="flex flex-col gap-gutter-lg">
+      <header class="flex flex-col items-center text-center gap-gutter-xs max-w-2xl mx-auto">
+        <span class="font-label text-label-md text-accent-blue">Zero Friction</span>
+        <h2 class="font-headline text-headline-lg text-ink dark:text-dark-ink">Config Snippet Generator</h2>
+        <p class="font-body text-body-md text-ink-muted dark:text-dark-ink-muted text-pretty">
+          Built entirely in your browser. Generates verified client configuration with zero data sent to any server.
+        </p>
+      </header>
+
+      <div class="rounded-xl bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm overflow-hidden flex flex-col">
+        <!-- Generator Controls -->
+        <div class="p-gutter-lg sm:p-gutter-xl border-b border-hairline dark:border-dark-hairline flex flex-col gap-gutter-lg">
+          
+          <!-- Step 1: Client Selection -->
+          <div class="flex flex-col gap-gutter-xs">
+            <label class="font-label text-label-sm font-semibold uppercase tracking-wider text-ink-muted dark:text-dark-ink-muted">
+              1. Choose Client
+            </label>
+            <div role="tablist" aria-label="Select AI client" class="grid grid-cols-1 sm:grid-cols-3 gap-gutter-sm">
+              <button type="button" role="tab" id="client-tab-cursor" aria-selected="true" data-client="cursor"
+                class="client-tab-btn flex items-center justify-center gap-2 p-gutter-md rounded-lg border-2 border-accent-blue bg-accent-blue/5 text-ink dark:text-dark-ink font-headline text-sm font-semibold transition-all">
+                <span class="material-symbols-outlined text-[18px] text-accent-blue" aria-hidden="true">ads_click</span>
+                <span>Cursor</span>
+              </button>
+              <button type="button" role="tab" id="client-tab-claude-desktop" aria-selected="false" data-client="claude-desktop"
+                class="client-tab-btn flex items-center justify-center gap-2 p-gutter-md rounded-lg border-2 border-hairline dark:border-dark-hairline bg-card dark:bg-dark-card text-ink-muted dark:text-dark-ink-muted font-headline text-sm font-semibold hover:border-ink-muted transition-all">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">desktop_windows</span>
+                <span>Claude Desktop</span>
+              </button>
+              <button type="button" role="tab" id="client-tab-claude-code" aria-selected="false" data-client="claude-code"
+                class="client-tab-btn flex items-center justify-center gap-2 p-gutter-md rounded-lg border-2 border-hairline dark:border-dark-hairline bg-card dark:bg-dark-card text-ink-muted dark:text-dark-ink-muted font-headline text-sm font-semibold hover:border-ink-muted transition-all">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">terminal</span>
+                <span>Claude Code</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 2: OS Selection -->
+          <div class="flex flex-col gap-gutter-xs">
+            <label class="font-label text-label-sm font-semibold uppercase tracking-wider text-ink-muted dark:text-dark-ink-muted">
+              2. Operating System
+            </label>
+            <div role="tablist" aria-label="Select operating system" class="flex flex-wrap gap-gutter-xs">
+              <button type="button" role="tab" id="os-tab-mac" aria-selected="true" data-os="mac"
+                class="os-tab-btn px-gutter-md py-gutter-xs rounded-full bg-ink dark:bg-white text-white dark:text-ink font-label text-label-md transition-colors">
+                macOS
+              </button>
+              <button type="button" role="tab" id="os-tab-win" aria-selected="false" data-os="win"
+                class="os-tab-btn px-gutter-md py-gutter-xs rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-white transition-colors">
+                Windows
+              </button>
+              <button type="button" role="tab" id="os-tab-linux" aria-selected="false" data-os="linux"
+                class="os-tab-btn px-gutter-md py-gutter-xs rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-white transition-colors">
+                Linux
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 3: JAR Path Input -->
+          <div class="flex flex-col gap-gutter-xs">
+            <div class="flex items-center justify-between">
+              <label for="jar-path-input" class="font-label text-label-sm font-semibold uppercase tracking-wider text-ink-muted dark:text-dark-ink-muted">
+                3. Path to repolens-mcp.jar
+              </label>
+              <button id="reset-path-btn" type="button" class="text-xs text-accent-blue hover:underline">
+                Use Default Path
+              </button>
+            </div>
+            <div class="relative flex items-center">
+              <span class="absolute left-3 material-symbols-outlined text-[18px] text-ink-muted dark:text-dark-ink-muted select-none" aria-hidden="true">folder</span>
+              <input id="jar-path-input" type="text"
+                class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline font-mono text-body-sm text-ink dark:text-dark-ink focus:ring-2 focus:ring-accent-blue focus:border-transparent transition-all"
+                placeholder="/Users/username/Downloads/repolens-mcp.jar">
+            </div>
+            <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+              Provide the absolute path where you downloaded the JAR file on your computer.
+            </p>
+          </div>
+
+          <!-- Safe Token Guarantee Banner -->
+          <div class="p-gutter-md rounded-lg bg-badge-good-bg/50 border border-badge-good-fg/20 flex items-start gap-gutter-sm text-badge-good-fg">
+            <span class="material-symbols-outlined text-[20px] shrink-0 mt-0.5" aria-hidden="true">lock</span>
+            <div class="font-body text-body-sm">
+              <strong>Token Security:</strong> The generated configuration uses the literal placeholder <code class="font-mono font-bold bg-white/70 dark:bg-black/30 px-1 py-0.5 rounded">YOUR_TOKEN_HERE</code>. You are never asked to enter your personal token into this webpage, and nothing is transmitted over the network.
+            </div>
+          </div>
+        </div>
+
+        <!-- Verified Config File Location Header -->
+        <div class="px-gutter-lg sm:px-gutter-xl py-gutter-md bg-card-subtle dark:bg-dark-card-subtle border-b border-hairline dark:border-dark-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-gutter-sm">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="material-symbols-outlined text-[18px] text-accent-blue" aria-hidden="true">description</span>
+            <span class="font-label text-label-sm font-semibold text-ink dark:text-dark-ink">Config File Location:</span>
+            <code id="config-path-display" class="font-mono text-xs px-2 py-1 rounded bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline text-ink dark:text-dark-ink break-all">
+              ~/.cursor/mcp.json
+            </code>
+            <button id="copy-path-btn" type="button" aria-label="Copy config path" title="Copy file path"
+              class="inline-flex items-center gap-1 text-xs text-accent-blue hover:underline">
+              <span class="material-symbols-outlined text-[14px]" aria-hidden="true">content_copy</span>
+              <span>Copy Path</span>
+            </button>
+          </div>
+          
+          <div id="verified-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-badge-excellent-bg text-badge-excellent-fg shrink-0">
+            <span class="material-symbols-outlined text-[14px]" aria-hidden="true">verified</span>
+            <span>Verified in Official Docs</span>
+          </div>
+        </div>
+
+        <!-- Code Snippet Output Box -->
+        <div class="relative bg-ink dark:bg-black text-gray-100 p-gutter-lg sm:p-gutter-xl font-mono text-xs sm:text-sm">
+          <div class="flex items-center justify-between pb-gutter-sm border-b border-gray-800 mb-gutter-md">
+            <span id="snippet-title" class="text-gray-400 font-sans text-xs font-medium">JSON Configuration</span>
+            <button id="copy-snippet-btn" type="button"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/20 text-white font-label text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+              <span id="copy-icon" class="material-symbols-outlined text-[16px]" aria-hidden="true">content_copy</span>
+              <span id="copy-text">Copy Snippet</span>
+            </button>
+          </div>
+
+          <pre class="overflow-x-auto code-scroll py-2 leading-relaxed"><code id="code-snippet-pre"></code></pre>
+
+          <!-- Small docs note if unverified or special conditions -->
+          <div id="client-note-box" class="mt-gutter-md pt-gutter-sm border-t border-gray-800 text-gray-400 text-xs flex items-center justify-between">
+            <span id="client-note-text">Official format: add to your client's mcpServers dictionary.</span>
+            <span class="inline-flex items-center gap-1 text-blue-400 hover:underline">
+              <span class="material-symbols-outlined text-[14px]" aria-hidden="true">help</span>
+              <a id="client-docs-link" href="https://docs.cursor.com/context/model-context-protocol" target="_blank" rel="noopener noreferrer">Check client docs</a>
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 6: Tools (Marked Coming Soon) -->
+    <section id="tools" class="flex flex-col gap-gutter-lg">
+      <header class="flex flex-col items-center text-center gap-gutter-xs max-w-2xl mx-auto">
+        <span class="font-label text-label-md text-accent-blue">MCP Capabilities</span>
+        <h2 class="font-headline text-headline-lg text-ink dark:text-dark-ink">Tools</h2>
+        <p class="font-body text-body-md text-ink-muted dark:text-dark-ink-muted text-pretty">
+          The planned MCP tools for RepoLens. These tools will be available directly in your AI assistant prompt context.
+        </p>
+      </header>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter-md">
+        <!-- 1. analyze_profile -->
+        <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col justify-between gap-gutter-md">
+          <div class="flex flex-col gap-gutter-xs">
+            <div class="flex items-center justify-between gap-gutter-sm">
+              <code class="font-mono text-sm font-bold text-accent-blue">analyze_profile</code>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-mono font-medium bg-badge-fair-bg text-badge-fair-fg">coming soon</span>
+            </div>
+            <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+              Evaluates all public repositories for a given GitHub handle and returns overall profile hygiene KPIs, distribution tiers, and top deductors.
+            </p>
+          </div>
+          <div class="font-mono text-xs text-ink-muted dark:text-dark-ink-muted bg-card-subtle dark:bg-dark-card-subtle p-gutter-xs rounded">
+            args: { username: string, max_repos?: number }
+          </div>
+        </article>
+
+        <!-- 2. score_repo -->
+        <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col justify-between gap-gutter-md">
+          <div class="flex flex-col gap-gutter-xs">
+            <div class="flex items-center justify-between gap-gutter-sm">
+              <code class="font-mono text-sm font-bold text-accent-blue">score_repo</code>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-mono font-medium bg-badge-fair-bg text-badge-fair-fg">coming soon</span>
+            </div>
+            <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+              Deterministically scores a single repository out of 100 points across Documentation, Hygiene, Maintenance, Security, Licensing, and Structure.
+            </p>
+          </div>
+          <div class="font-mono text-xs text-ink-muted dark:text-dark-ink-muted bg-card-subtle dark:bg-dark-card-subtle p-gutter-xs rounded">
+            args: { owner: string, repo: string }
+          </div>
+        </article>
+
+        <!-- 3. compare_repos -->
+        <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col justify-between gap-gutter-md">
+          <div class="flex flex-col gap-gutter-xs">
+            <div class="flex items-center justify-between gap-gutter-sm">
+              <code class="font-mono text-sm font-bold text-accent-blue">compare_repos</code>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-mono font-medium bg-badge-fair-bg text-badge-fair-fg">coming soon</span>
+            </div>
+            <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+              Performs side-by-side hygiene comparison between two repositories to help teams select better maintained dependencies.
+            </p>
+          </div>
+          <div class="font-mono text-xs text-ink-muted dark:text-dark-ink-muted bg-card-subtle dark:bg-dark-card-subtle p-gutter-xs rounded">
+            args: { repo_a: string, repo_b: string }
+          </div>
+        </article>
+
+        <!-- 4. fix_plan -->
+        <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col justify-between gap-gutter-md">
+          <div class="flex flex-col gap-gutter-xs">
+            <div class="flex items-center justify-between gap-gutter-sm">
+              <code class="font-mono text-sm font-bold text-accent-blue">fix_plan</code>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-mono font-medium bg-badge-fair-bg text-badge-fair-fg">coming soon</span>
+            </div>
+            <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+              Runs the Greedy Set Cover approximation algorithm to output the minimal, prioritized action sequence that fixes the maximum deductions.
+            </p>
+          </div>
+          <div class="font-mono text-xs text-ink-muted dark:text-dark-ink-muted bg-card-subtle dark:bg-dark-card-subtle p-gutter-xs rounded">
+            args: { username: string, target_score?: number }
+          </div>
+        </article>
+
+        <!-- 5. explain_deduction -->
+        <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col justify-between gap-gutter-md">
+          <div class="flex flex-col gap-gutter-xs">
+            <div class="flex items-center justify-between gap-gutter-sm">
+              <code class="font-mono text-sm font-bold text-accent-blue">explain_deduction</code>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-mono font-medium bg-badge-fair-bg text-badge-fair-fg">coming soon</span>
+            </div>
+            <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+              Explains why a specific deduction occurred on a repository, citing exact criteria rules and offering drop-in remediation templates.
+            </p>
+          </div>
+          <div class="font-mono text-xs text-ink-muted dark:text-dark-ink-muted bg-card-subtle dark:bg-dark-card-subtle p-gutter-xs rounded">
+            args: { deduction_id: string, repo: string }
+          </div>
+        </article>
+
+        <!-- 6. find_duplicates -->
+        <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col justify-between gap-gutter-md">
+          <div class="flex flex-col gap-gutter-xs">
+            <div class="flex items-center justify-between gap-gutter-sm">
+              <code class="font-mono text-sm font-bold text-accent-blue">find_duplicates</code>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-mono font-medium bg-badge-fair-bg text-badge-fair-fg">coming soon</span>
+            </div>
+            <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+              Uses Disjoint Set Union (DSU) clustering on repository metadata to detect duplicate, abandoned forks, or renamed projects.
+            </p>
+          </div>
+          <div class="font-mono text-xs text-ink-muted dark:text-dark-ink-muted bg-card-subtle dark:bg-dark-card-subtle p-gutter-xs rounded">
+            args: { username: string }
+          </div>
+        </article>
+
+        <!-- 7. get_status -->
+        <article class="md:col-span-2 p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col justify-between gap-gutter-md">
+          <div class="flex flex-col gap-gutter-xs">
+            <div class="flex items-center justify-between gap-gutter-sm">
+              <code class="font-mono text-sm font-bold text-accent-blue">get_status</code>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-mono font-medium bg-badge-fair-bg text-badge-fair-fg">coming soon</span>
+            </div>
+            <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+              Checks remaining GitHub API rate limit quota, local H2 ETag cache hit ratio, and MCP server health.
+            </p>
+          </div>
+          <div class="font-mono text-xs text-ink-muted dark:text-dark-ink-muted bg-card-subtle dark:bg-dark-card-subtle p-gutter-xs rounded">
+            args: {}
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Section 7: Example Prompts -->
+    <section id="example-prompts" class="flex flex-col gap-gutter-lg">
+      <header class="flex flex-col items-center text-center gap-gutter-xs max-w-2xl mx-auto">
+        <span class="font-label text-label-md text-accent-blue">Assistant Guidance</span>
+        <h2 class="font-headline text-headline-lg text-ink dark:text-dark-ink">Example Prompts</h2>
+        <p class="font-body text-body-md text-ink-muted dark:text-dark-ink-muted">
+          Once configured, talk to your AI assistant naturally using these prompts:
+        </p>
+      </header>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter-md">
+        <div class="p-gutter-md rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline flex flex-col justify-between gap-gutter-sm">
+          <p class="font-body text-body-md text-ink dark:text-dark-ink italic">
+            "Analyze my GitHub profile @torvalds and tell me the lowest scoring repositories and why."
+          </p>
+          <span class="font-label text-label-xs text-ink-muted dark:text-dark-ink-muted uppercase tracking-wider">Profile Assessment</span>
+        </div>
+
+        <div class="p-gutter-md rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline flex flex-col justify-between gap-gutter-sm">
+          <p class="font-body text-body-md text-ink dark:text-dark-ink italic">
+            "Score repository owner/repo and give me the Greedy Set Cover fix plan to get above 80 points."
+          </p>
+          <span class="font-label text-label-xs text-ink-muted dark:text-dark-ink-muted uppercase tracking-wider">Fix Planning</span>
+        </div>
+
+        <div class="p-gutter-md rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline flex flex-col justify-between gap-gutter-sm">
+          <p class="font-body text-body-md text-ink dark:text-dark-ink italic">
+            "Explain the missing license deduction on repolens-web and draft a standard Apache 2.0 LICENSE file."
+          </p>
+          <span class="font-label text-label-xs text-ink-muted dark:text-dark-ink-muted uppercase tracking-wider">Deduction Remediation</span>
+        </div>
+
+        <div class="p-gutter-md rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline flex flex-col justify-between gap-gutter-sm">
+          <p class="font-body text-body-md text-ink dark:text-dark-ink italic">
+            "Find duplicate or abandoned projects across my profile and tell me which ones to archive."
+          </p>
+          <span class="font-label text-label-xs text-ink-muted dark:text-dark-ink-muted uppercase tracking-wider">Duplicate Cleanup</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 8: Privacy and Safety -->
+    <section id="privacy" class="p-gutter-xl rounded-xl bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm flex flex-col gap-gutter-lg">
+      <div class="flex items-center gap-gutter-sm">
+        <div class="w-10 h-10 rounded-full bg-badge-excellent-bg text-badge-excellent-fg flex items-center justify-center">
+          <span class="material-symbols-outlined text-[22px]" aria-hidden="true">security</span>
+        </div>
+        <div>
+          <h2 class="font-headline text-headline-md text-ink dark:text-dark-ink text-xl font-semibold">Privacy and Safety Guarantees</h2>
+          <span class="font-label text-label-sm text-ink-muted dark:text-dark-ink-muted">Strict local sandboxing & security standards</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter-lg">
+        <div class="flex flex-col gap-1">
+          <h3 class="font-headline text-sm font-semibold text-ink dark:text-dark-ink">Zero Listening Sockets</h3>
+          <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+            The MCP server communicates exclusively across child process standard I/O (stdin/stdout). It does not bind to localhost or open any listening network ports.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <h3 class="font-headline text-sm font-semibold text-ink dark:text-dark-ink">No Source Code Clones</h3>
+          <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+            RepoLens only inspects public metadata endpoints via official GitHub REST APIs. Private repositories are never touched and your local codebase is never uploaded.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <h3 class="font-headline text-sm font-semibold text-ink dark:text-dark-ink">Token Confidentiality</h3>
+          <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+            Your optional GitHub Personal Access Token is passed directly to the local subprocess as an environment variable. It is never logged, stored on disk, or sent to RepoLens servers.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <h3 class="font-headline text-sm font-semibold text-ink dark:text-dark-ink">Pure Read-Only Access</h3>
+          <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+            All operations are read-only HTTP GET queries. RepoLens MCP will never create, mutate, or delete issues, branches, files, or repositories on GitHub.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 9: Troubleshooting -->
+    <section id="troubleshooting" class="flex flex-col gap-gutter-lg">
+      <header class="flex flex-col items-center text-center gap-gutter-xs max-w-2xl mx-auto">
+        <span class="font-label text-label-md text-accent-blue">Self-Service Diagnostic</span>
+        <h2 class="font-headline text-headline-lg text-ink dark:text-dark-ink">Troubleshooting</h2>
+        <p class="font-body text-body-md text-ink-muted dark:text-dark-ink-muted">
+          Solutions for common configuration and runtime issues:
+        </p>
+      </header>
+
+      <div class="flex flex-col gap-gutter-md">
+        <!-- Issue 1: Java not found -->
+        <details class="group p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm open:ring-1 open:ring-accent-blue transition-all">
+          <summary class="flex items-center justify-between cursor-pointer list-none">
+            <div class="flex items-center gap-gutter-sm">
+              <span class="material-symbols-outlined text-[20px] text-accent-blue" aria-hidden="true">error_outline</span>
+              <span class="font-headline text-sm font-semibold text-ink dark:text-dark-ink">Java not found (command not found / exit code 127)</span>
+            </div>
+            <span class="material-symbols-outlined text-[20px] text-ink-muted dark:text-dark-ink-muted transition-transform group-open:rotate-180" aria-hidden="true">expand_more</span>
+          </summary>
+          <div class="mt-gutter-md pt-gutter-md border-t border-hairline dark:border-dark-hairline font-body text-body-sm text-ink-muted dark:text-dark-ink-muted flex flex-col gap-2">
+            <p><strong>Cause:</strong> Your client cannot locate the <code class="font-mono text-xs">java</code> executable in its execution environment PATH.</p>
+            <p><strong>Fix:</strong> Replace <code class="font-mono text-xs">"command": "java"</code> with the full absolute path to your Java 17 binary:</p>
+            <ul class="list-disc pl-5 font-mono text-xs space-y-1">
+              <li>macOS (Homebrew): <code>/opt/homebrew/opt/openjdk@17/bin/java</code></li>
+              <li>macOS (Standard): <code>/usr/bin/java</code></li>
+              <li>Windows: <code>C:\\Program Files\\Java\\jdk-17\\bin\\java.exe</code></li>
+              <li>Linux: <code>/usr/bin/java</code></li>
+            </ul>
+          </div>
+        </details>
+
+        <!-- Issue 2: Tools not appearing after restart -->
+        <details class="group p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm open:ring-1 open:ring-accent-blue transition-all">
+          <summary class="flex items-center justify-between cursor-pointer list-none">
+            <div class="flex items-center gap-gutter-sm">
+              <span class="material-symbols-outlined text-[20px] text-accent-blue" aria-hidden="true">refresh</span>
+              <span class="font-headline text-sm font-semibold text-ink dark:text-dark-ink">Tools not appearing in assistant after restart</span>
+            </div>
+            <span class="material-symbols-outlined text-[20px] text-ink-muted dark:text-dark-ink-muted transition-transform group-open:rotate-180" aria-hidden="true">expand_more</span>
+          </summary>
+          <div class="mt-gutter-md pt-gutter-md border-t border-hairline dark:border-dark-hairline font-body text-body-sm text-ink-muted dark:text-dark-ink-muted flex flex-col gap-2">
+            <p><strong>Cause:</strong> Either the configuration file has a trailing comma / JSON parse error, or the client was not fully quit.</p>
+            <p><strong>Fix:</strong></p>
+            <ol class="list-decimal pl-5 space-y-1">
+              <li>Validate your JSON syntax in a linter (check for missing braces or dangling commas).</li>
+              <li>Completely quit the client process (on macOS, press <kbd class="px-1 py-0.5 rounded bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline">Cmd + Q</kbd>; on Windows, ensure the background tray process exits).</li>
+              <li>Verify the file path exists: run <code class="font-mono text-xs">ls -la /path/to/repolens-mcp.jar</code> in your terminal.</li>
+            </ol>
+          </div>
+        </details>
+
+        <!-- Issue 3: Nothing printed on stdout rules (for developers) -->
+        <details class="group p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm open:ring-1 open:ring-accent-blue transition-all">
+          <summary class="flex items-center justify-between cursor-pointer list-none">
+            <div class="flex items-center gap-gutter-sm">
+              <span class="material-symbols-outlined text-[20px] text-accent-blue" aria-hidden="true">code</span>
+              <span class="font-headline text-sm font-semibold text-ink dark:text-dark-ink">Developer Rule: Nothing printed to stdout</span>
+            </div>
+            <span class="material-symbols-outlined text-[20px] text-ink-muted dark:text-dark-ink-muted transition-transform group-open:rotate-180" aria-hidden="true">expand_more</span>
+          </summary>
+          <div class="mt-gutter-md pt-gutter-md border-t border-hairline dark:border-dark-hairline font-body text-body-sm text-ink-muted dark:text-dark-ink-muted flex flex-col gap-2">
+            <p><strong>Critical MCP Protocol Rule:</strong> MCP stdio transport requires that <code class="font-mono text-xs">stdout</code> be strictly and exclusively reserved for JSON-RPC messages.</p>
+            <p>If you are developing or customizing the JAR:</p>
+            <ul class="list-disc pl-5 space-y-1">
+              <li><strong>Never</strong> call <code class="font-mono text-xs">System.out.println()</code> or write log statements to stdout. Even a single banner line will corrupt the JSON-RPC framing and crash the client parser.</li>
+              <li>Direct all diagnostics and logs to <code class="font-mono text-xs">System.err</code> (stderr) or a rolling file logger. MCP clients safely display stderr in their developer debug logs.</li>
+            </ul>
+          </div>
+        </details>
+
+        <!-- Issue 4: Rate limit reached -->
+        <details class="group p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm open:ring-1 open:ring-accent-blue transition-all">
+          <summary class="flex items-center justify-between cursor-pointer list-none">
+            <div class="flex items-center gap-gutter-sm">
+              <span class="material-symbols-outlined text-[20px] text-accent-blue" aria-hidden="true">speed</span>
+              <span class="font-headline text-sm font-semibold text-ink dark:text-dark-ink">Rate limit reached (HTTP 403 API rate limit exceeded)</span>
+            </div>
+            <span class="material-symbols-outlined text-[20px] text-ink-muted dark:text-dark-ink-muted transition-transform group-open:rotate-180" aria-hidden="true">expand_more</span>
+          </summary>
+          <div class="mt-gutter-md pt-gutter-md border-t border-hairline dark:border-dark-hairline font-body text-body-sm text-ink-muted dark:text-dark-ink-muted flex flex-col gap-2">
+            <p><strong>Cause:</strong> GitHub allows only 60 unauthenticated requests per hour per IP. Analyzing large profiles quickly exhausts this quota.</p>
+            <p><strong>Fix:</strong> Create a GitHub Personal Access Token (classic or fine-grained with public read permission) at <code class="font-mono text-xs">github.com/settings/tokens</code> and add it to your client's config under <code class="font-mono text-xs">"env": { "GITHUB_TOKEN": "ghp_..." }</code> to unlock 5,000 requests/hour.</p>
+          </div>
+        </details>
+
+        <!-- Issue 5: Expired token -->
+        <details class="group p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-sm open:ring-1 open:ring-accent-blue transition-all">
+          <summary class="flex items-center justify-between cursor-pointer list-none">
+            <div class="flex items-center gap-gutter-sm">
+              <span class="material-symbols-outlined text-[20px] text-accent-blue" aria-hidden="true">vpn_key_off</span>
+              <span class="font-headline text-sm font-semibold text-ink dark:text-dark-ink">Expired or invalid token (HTTP 401 Bad credentials)</span>
+            </div>
+            <span class="material-symbols-outlined text-[20px] text-ink-muted dark:text-dark-ink-muted transition-transform group-open:rotate-180" aria-hidden="true">expand_more</span>
+          </summary>
+          <div class="mt-gutter-md pt-gutter-md border-t border-hairline dark:border-dark-hairline font-body text-body-sm text-ink-muted dark:text-dark-ink-muted flex flex-col gap-2">
+            <p><strong>Cause:</strong> The configured token has expired, been revoked, or contains accidental surrounding whitespace or quotation marks.</p>
+            <p><strong>Fix:</strong> Regenerate your token on GitHub, paste the fresh token into your client configuration file, and restart your IDE.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Apple-inspired Footer -->
+  <footer class="mt-gutter-xl border-t border-hairline dark:border-dark-hairline py-gutter-xl text-center font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+    <div class="max-w-7xl mx-auto px-gutter-md flex flex-col sm:flex-row items-center justify-between gap-gutter-md">
+      <span>RepoLens • Model Context Protocol Server • Java 17+</span>
+      <div class="flex items-center gap-gutter-lg">
+        <a href="/" class="hover:text-ink dark:hover:text-white transition-colors">Home</a>
+        <a href="/rubric.html" class="hover:text-ink dark:hover:text-white transition-colors">Scoring Rubric</a>
+        <a href="/repolens-clean/RepoLensClean.html" class="hover:text-ink dark:hover:text-white transition-colors">Evaluator</a>
+        <a href="/mcp.html" class="text-accent-blue dark:text-blue-400 font-semibold transition-colors">MCP Tab</a>
+        <a href="#top" class="hover:text-ink dark:hover:text-white transition-colors">Back to top</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Interactive Config Generator and Theme Script -->
+  <script>
+    // Configuration values (placeholders)
+    const RELEASES_PAGE_URL = 'https://github.com/repolens/repolens/releases/latest';
+    const DEFAULT_JAR_NAME = 'repolens-mcp.jar';
+
+    // Update release buttons
+    const releaseBtn = document.getElementById('release-link-btn');
+    if (releaseBtn) releaseBtn.href = RELEASES_PAGE_URL;
+
+    // Theme toggle handling
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const themeToggleIcon = document.getElementById('theme-toggle-icon');
+
+    function applyTheme(isDark) {
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        if (themeToggleIcon) themeToggleIcon.textContent = 'light_mode';
+      } else {
+        document.documentElement.classList.remove('dark');
+        if (themeToggleIcon) themeToggleIcon.textContent = 'dark_mode';
+      }
+    }
+
+    const storedTheme = localStorage.getItem('repolens_theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(storedTheme === 'dark' || (!storedTheme && prefersDark));
+
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', () => {
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('repolens_theme', isDark ? 'dark' : 'light');
+        applyTheme(isDark);
+      });
+    }
+
+    // Generator State
+    let currentClient = 'cursor';
+    let currentOs = 'mac';
+
+    // Client and OS definitions verified with official documentation
+    const CLIENT_METADATA = {
+      'cursor': {
+        name: 'Cursor',
+        docsUrl: 'https://docs.cursor.com/context/model-context-protocol',
+        docsText: 'Verified in official Cursor documentation (Features > Tools & MCP)',
+        verified: true,
+        locations: {
+          mac: '~/.cursor/mcp.json (or workspace .cursor/mcp.json)',
+          win: '%USERPROFILE%\\.cursor\\mcp.json (or workspace .cursor/mcp.json)',
+          linux: '~/.cursor/mcp.json (or workspace .cursor/mcp.json)'
+        },
+        defaultPaths: {
+          mac: '/Users/username/Downloads/repolens-mcp.jar',
+          win: 'C:\\Users\\username\\Downloads\\repolens-mcp.jar',
+          linux: '/home/username/Downloads/repolens-mcp.jar'
+        }
+      },
+      'claude-desktop': {
+        name: 'Claude Desktop',
+        docsUrl: 'https://modelcontextprotocol.io/quickstart/user',
+        docsText: 'Verified in official Anthropic docs (Settings > Developer > Edit Config)',
+        verified: true,
+        locations: {
+          mac: '~/Library/Application Support/Claude/claude_desktop_config.json',
+          win: '%APPDATA%\\Claude\\claude_desktop_config.json',
+          linux: '~/.config/Claude/claude_desktop_config.json (check client docs for Linux preview)'
+        },
+        defaultPaths: {
+          mac: '/Users/username/Downloads/repolens-mcp.jar',
+          win: 'C:\\Users\\username\\Downloads\\repolens-mcp.jar',
+          linux: '/home/username/Downloads/repolens-mcp.jar'
+        }
+      },
+      'claude-code': {
+        name: 'Claude Code',
+        docsUrl: 'https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview',
+        docsText: 'Verified in official Claude Code documentation (CLI stdio transport)',
+        verified: true,
+        locations: {
+          mac: '~/.claude.json (or project-root .mcp.json via CLI)',
+          win: '%USERPROFILE%\\.claude.json (or project-root .mcp.json)',
+          linux: '~/.claude.json (or project-root .mcp.json via CLI)'
+        },
+        defaultPaths: {
+          mac: '/Users/username/Downloads/repolens-mcp.jar',
+          win: 'C:\\Users\\username\\Downloads\\repolens-mcp.jar',
+          linux: '/home/username/Downloads/repolens-mcp.jar'
+        }
+      }
+    };
+
+    const jarInput = document.getElementById('jar-path-input');
+    const configPathDisplay = document.getElementById('config-path-display');
+    const snippetPre = document.getElementById('code-snippet-pre');
+    const clientNoteText = document.getElementById('client-note-text');
+    const clientDocsLink = document.getElementById('client-docs-link');
+    const snippetTitle = document.getElementById('snippet-title');
+    const verifiedBadge = document.getElementById('verified-badge');
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function getJarPath() {
+      const val = (jarInput?.value || '').trim();
+      if (val) return val;
+      return CLIENT_METADATA[currentClient].defaultPaths[currentOs];
+    }
+
+    function generateSnippetText() {
+      const jarPath = getJarPath();
+
+      if (currentClient === 'claude-code') {
+        // Claude Code has both the recommended CLI command and the JSON file format
+        return `# Option A: Run via Claude Code CLI (Recommended)\nclaude mcp add repolens --env GITHUB_TOKEN=YOUR_TOKEN_HERE -- java -jar "${jarPath}"\n\n# Option B: Add to your .mcp.json (project root) or ~/.claude.json\n{\n  "mcpServers": {\n    "repolens": {\n      "command": "java",\n      "args": [\n        "-jar",\n        "${jarPath}"\n      ],\n      "env": {\n        "GITHUB_TOKEN": "YOUR_TOKEN_HERE"\n      }\n    }\n  }\n}`;
+      }
+
+      // Cursor & Claude Desktop standard format
+      const config = {
+        mcpServers: {
+          repolens: {
+            command: "java",
+            args: [
+              "-jar",
+              jarPath
+            ],
+            env: {
+              GITHUB_TOKEN: "YOUR_TOKEN_HERE"
+            }
+          }
+        }
+      };
+
+      return JSON.stringify(config, null, 2);
+    }
+
+    function renderSnippet() {
+      const meta = CLIENT_METADATA[currentClient];
+      const filePath = meta.locations[currentOs];
+      
+      if (configPathDisplay) configPathDisplay.textContent = filePath;
+      if (clientDocsLink) {
+        clientDocsLink.href = meta.docsUrl;
+        clientDocsLink.textContent = meta.docsText;
+      }
+
+      // If Linux in Claude Desktop or special case, flag note
+      if (currentClient === 'claude-desktop' && currentOs === 'linux') {
+        if (clientNoteText) clientNoteText.textContent = 'Note: Claude Desktop for Linux is community-supported; check the client docs for exact package path.';
+        if (verifiedBadge) {
+          verifiedBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-badge-fair-bg text-badge-fair-fg shrink-0';
+          verifiedBadge.innerHTML = '<span class="material-symbols-outlined text-[14px]">info</span><span>check client docs</span>';
+        }
+      } else {
+        if (clientNoteText) clientNoteText.textContent = 'Paste into your client configuration file. Replace YOUR_TOKEN_HERE locally.';
+        if (verifiedBadge) {
+          verifiedBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-badge-excellent-bg text-badge-excellent-fg shrink-0';
+          verifiedBadge.innerHTML = '<span class="material-symbols-outlined text-[14px]">verified</span><span>Verified in Official Docs</span>';
+        }
+      }
+
+      if (snippetTitle) {
+        snippetTitle.textContent = currentClient === 'claude-code' 
+          ? 'CLI Command & .mcp.json Format' 
+          : `${meta.name} Config (${filePath.split('/').pop().split('\\').pop()})`;
+      }
+
+      const snippetText = generateSnippetText();
+      if (snippetPre) snippetPre.textContent = snippetText;
+    }
+
+    // Set default input placeholder
+    function updatePlaceholder() {
+      if (jarInput) {
+        const def = CLIENT_METADATA[currentClient].defaultPaths[currentOs];
+        jarInput.placeholder = def;
+      }
+    }
+
+    // Event listener: Reset path
+    const resetPathBtn = document.getElementById('reset-path-btn');
+    if (resetPathBtn) {
+      resetPathBtn.addEventListener('click', () => {
+        if (jarInput) jarInput.value = '';
+        renderSnippet();
+      });
+    }
+
+    // Event listener: Jar input typing
+    if (jarInput) {
+      jarInput.addEventListener('input', () => {
+        renderSnippet();
+      });
+    }
+
+    // Client Tab Buttons
+    document.querySelectorAll('.client-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.client-tab-btn').forEach(b => {
+          b.setAttribute('aria-selected', 'false');
+          b.className = 'client-tab-btn flex items-center justify-center gap-2 p-gutter-md rounded-lg border-2 border-hairline dark:border-dark-hairline bg-card dark:bg-dark-card text-ink-muted dark:text-dark-ink-muted font-headline text-sm font-semibold hover:border-ink-muted transition-all';
+        });
+        btn.setAttribute('aria-selected', 'true');
+        btn.className = 'client-tab-btn flex items-center justify-center gap-2 p-gutter-md rounded-lg border-2 border-accent-blue bg-accent-blue/5 text-ink dark:text-dark-ink font-headline text-sm font-semibold transition-all';
+        
+        currentClient = btn.getAttribute('data-client') || 'cursor';
+        updatePlaceholder();
+        renderSnippet();
+      });
+    });
+
+    // OS Tab Buttons
+    document.querySelectorAll('.os-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.os-tab-btn').forEach(b => {
+          b.setAttribute('aria-selected', 'false');
+          b.className = 'os-tab-btn px-gutter-md py-gutter-xs rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-white transition-colors';
+        });
+        btn.setAttribute('aria-selected', 'true');
+        btn.className = 'os-tab-btn px-gutter-md py-gutter-xs rounded-full bg-ink dark:bg-white text-white dark:text-ink font-label text-label-md transition-colors';
+        
+        currentOs = btn.getAttribute('data-os') || 'mac';
+        updatePlaceholder();
+        renderSnippet();
+      });
+    });
+
+    // Copy Snippet Button
+    const copySnippetBtn = document.getElementById('copy-snippet-btn');
+    const copyIcon = document.getElementById('copy-icon');
+    const copyText = document.getElementById('copy-text');
+
+    if (copySnippetBtn) {
+      copySnippetBtn.addEventListener('click', async () => {
+        const textToCopy = generateSnippetText();
+        try {
+          await navigator.clipboard.writeText(textToCopy);
+          if (copyIcon) copyIcon.textContent = 'check';
+          if (copyText) copyText.textContent = 'Copied!';
+          setTimeout(() => {
+            if (copyIcon) copyIcon.textContent = 'content_copy';
+            if (copyText) copyText.textContent = 'Copy Snippet';
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy snippet: ', err);
+        }
+      });
+    }
+
+    // Copy Path Button
+    const copyPathBtn = document.getElementById('copy-path-btn');
+    if (copyPathBtn) {
+      copyPathBtn.addEventListener('click', async () => {
+        const meta = CLIENT_METADATA[currentClient];
+        const filePath = meta.locations[currentOs];
+        try {
+          await navigator.clipboard.writeText(filePath);
+          copyPathBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">check</span><span>Copied!</span>';
+          setTimeout(() => {
+            copyPathBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">content_copy</span><span>Copy Path</span>';
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy path: ', err);
+        }
+      });
+    }
+
+    // Initial Render
+    updatePlaceholder();
+    renderSnippet();
+  </script>
+</body>
+
+</html>

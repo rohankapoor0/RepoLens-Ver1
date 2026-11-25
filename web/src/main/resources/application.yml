@@ -1,0 +1,31 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: repolens-web
+  datasource:
+    url: jdbc:h2:file:./data/repolens;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  h2:
+    console:
+      enabled: false
+
+repolens:
+  cache:
+    analysis-ttl-hours: 6
+  github:
+    token: ${GITHUB_TOKEN:}
+  analysis:
+    max-repos: 50
+    stale-months: 12
+    concurrency: 4
+  throttle:
+    max-distinct-usernames-per-hour: 10

@@ -1,0 +1,1085 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RepoLens — Clean Light Repository Hygiene Evaluator</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            'ink': '#111318',
+            'ink-muted': '#4B5563',
+            'canvas': '#F5F6FA',
+            'card': '#FFFFFF',
+            'card-subtle': '#F9FAFB',
+            'hairline': '#E5E7EB',
+            'hairline-subtle': '#F0F2F5',
+            'accent-indigo': '#6366F1',
+            'accent-blue': '#2563EB',
+            'chart-excellent': '#7C8CF8',
+            'chart-good': '#3B82F6',
+            'chart-fair': '#F4B459',
+            'chart-needs': '#F26464',
+            'badge-excellent-bg': '#DCFCE7',
+            'badge-excellent-fg': '#166534',
+            'badge-good-bg': '#DBEAFE',
+            'badge-good-fg': '#1E40AF',
+            'badge-fair-bg': '#FEF3C7',
+            'badge-fair-fg': '#92400E',
+            'badge-needs-bg': '#FEE2E2',
+            'badge-needs-fg': '#991B1B',
+            'dark-canvas': '#0B0E14',
+            'dark-card': '#141820',
+            'dark-card-subtle': '#1C222D',
+            'dark-ink': '#F3F4F6',
+            'dark-ink-muted': '#9CA3AF',
+            'dark-hairline': '#262C38',
+          },
+          fontFamily: {
+            'display': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'sans-serif'],
+            'headline': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'sans-serif'],
+            'title': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'sans-serif'],
+            'body': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', 'sans-serif'],
+            'label': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', 'sans-serif'],
+            'mono': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', 'sans-serif'],
+          },
+          fontSize: {
+            'display-lg': ['44px', { lineHeight: '50px', letterSpacing: '-1.2px', fontWeight: '700' }],
+            'display-lg-mobile': ['30px', { lineHeight: '36px', letterSpacing: '-0.8px', fontWeight: '700' }],
+            'headline-lg': ['26px', { lineHeight: '32px', letterSpacing: '-0.5px', fontWeight: '600' }],
+            'headline-md': ['20px', { lineHeight: '28px', letterSpacing: '-0.3px', fontWeight: '600' }],
+            'title-md': ['16px', { lineHeight: '24px', letterSpacing: '-0.2px', fontWeight: '600' }],
+            'body-lg': ['16px', { lineHeight: '24px', letterSpacing: '-0.1px', fontWeight: '400' }],
+            'body-md': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '400' }],
+            'body-sm': ['13px', { lineHeight: '18px', letterSpacing: '0px', fontWeight: '400' }],
+            'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '-0.1px', fontWeight: '500' }],
+            'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0px', fontWeight: '500' }],
+            'label-sm': ['11px', { lineHeight: '16px', letterSpacing: '0.1px', fontWeight: '500' }],
+            'mono-lg': ['30px', { lineHeight: '36px', letterSpacing: '-0.8px', fontWeight: '700' }],
+            'mono-md': ['13px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '500' }],
+            'mono-sm': ['12px', { lineHeight: '16px', letterSpacing: '0px', fontWeight: '400' }],
+          },
+          borderRadius: {
+            'sm': '8px',
+            'DEFAULT': '10px',
+            'md': '16px',
+            'lg': '20px',
+            'xl': '28px',
+            'full': '9999px',
+          },
+          spacing: {
+            'gutter-xs': '4px',
+            'gutter-sm': '8px',
+            'gutter-md': '16px',
+            'gutter-lg': '24px',
+            'gutter-xl': '32px',
+            'section': '48px',
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>
+    .material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp, .material-icons {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      line-height: 1 !important;
+      box-sizing: content-box;
+      overflow: hidden;
+      white-space: nowrap;
+      direction: ltr;
+      vertical-align: middle;
+    }
+    .hero-pastel-wash {
+      background: linear-gradient(135deg, #FFFFFF 0%, #F7F5FC 55%, #EFF3FF 100%);
+    }
+    .dark .hero-pastel-wash {
+      background: linear-gradient(135deg, #141820 0%, #171B26 55%, #161D2E 100%);
+    }
+    dialog::backdrop {
+      background: rgba(17, 19, 24, 0.45);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    dialog:not([open]) {
+      display: none !important;
+    }
+    dialog#repo-detail-dialog[open] {
+      display: flex !important;
+      animation: modalSpringIn 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes modalSpringIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.93) translateY(12px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+    details[open] summary .material-symbols-outlined {
+      transform: rotate(180deg);
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body class="min-h-[1024px] bg-canvas dark:bg-dark-canvas text-ink dark:text-dark-ink font-body antialiased transition-colors duration-150" data-stitch-vh="min-h-[1024px]===min-h-screen">
+
+  <!-- Apple-inspired Frosted Navigation Bar -->
+  <header class="sticky top-0 z-30 border-b border-hairline/80 dark:border-dark-hairline bg-white/80 dark:bg-dark-canvas/80 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-gutter-md sm:px-gutter-lg py-gutter-sm flex flex-wrap items-center justify-between gap-gutter-md">
+      <!-- Brand Mark -->
+      <a href="/" class="flex items-center gap-gutter-sm group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink rounded-DEFAULT">
+        <div class="w-8 h-8 rounded-full bg-ink dark:bg-white flex items-center justify-center">
+          <span class="material-symbols-outlined text-[17px] text-white dark:text-ink" aria-hidden="true">radar</span>
+        </div>
+        <div class="flex items-baseline gap-gutter-sm">
+          <span class="font-headline text-title-md text-ink dark:text-dark-ink tracking-tight" data-design-text-token="title-md">RepoLens</span>
+          <span class="hidden md:inline font-body text-label-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-sm">Repository Hygiene Evaluator</span>
+        </div>
+      </a>
+
+      <!-- Right Controls -->
+      <div class="flex items-center gap-gutter-sm">
+        <div class="hidden md:inline-flex items-center gap-gutter-xs px-gutter-sm py-gutter-xs rounded-full bg-card-subtle dark:bg-dark-card border border-hairline dark:border-dark-hairline">
+          <span class="w-2 h-2 rounded-full bg-badge-excellent-fg" aria-hidden="true"></span>
+          <span id="header-api-quota" class="font-mono text-mono-sm tabular-nums text-ink-muted dark:text-dark-ink-muted" data-design-text-token="mono-sm">GitHub API: 5,000 / 5,000</span>
+        </div>
+
+        <a href="/mcp.html" class="inline-flex items-center justify-center gap-gutter-xs px-gutter-md py-gutter-xs rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline text-ink dark:text-dark-ink font-label text-label-md hover:bg-card-subtle dark:hover:bg-dark-card-subtle transition-colors">
+          <span class="w-1.5 h-1.5 rounded-full bg-accent-blue" aria-hidden="true"></span>
+          <span>MCP</span>
+        </a>
+
+        <button id="open-rubric-btn" data-component-id="button-secondary" data-component-type="button" data-component-variant="secondary" type="button" class="inline-flex items-center justify-center gap-gutter-xs px-gutter-md py-gutter-xs rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline text-ink dark:text-dark-ink font-label text-label-md hover:bg-card-subtle dark:hover:bg-dark-card-subtle transition-colors">
+          <span data-design-text-token="label-md">Scoring Rubric</span>
+        </button>
+
+        <button id="theme-toggle-btn" data-component-id="button-icon" data-component-type="button" data-component-variant="icon" type="button" aria-label="Toggle light and dark theme" class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-dark-ink transition-colors">
+          <span id="theme-toggle-icon" class="material-symbols-outlined text-[18px]" aria-hidden="true">dark_mode</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top" class="max-w-7xl mx-auto px-gutter-md sm:px-gutter-lg py-gutter-lg sm:py-gutter-xl flex flex-col gap-gutter-xl">
+
+    <!-- Apple + Reference Inspired Hero Card with Soft Pastel Wash -->
+    <section class="hero-pastel-wash rounded-xl border border-hairline dark:border-dark-hairline shadow-[0_4px_24px_rgba(17,19,24,0.04)] px-gutter-lg py-gutter-xl sm:py-section flex flex-col items-center text-center gap-gutter-md">
+      <h1 class="font-display text-display-lg-mobile md:text-display-lg text-ink dark:text-dark-ink max-w-3xl text-balance" data-design-text-token="display-lg">
+        Effortlessly evaluate any GitHub profile for engineering hygiene.
+      </h1>
+      <p class="font-body text-body-lg text-ink-muted dark:text-dark-ink-muted max-w-2xl text-pretty" data-design-text-token="body-lg">
+        Public repos only • Zero login required • Deterministic 100-pt rubric • Not a measure of coding skill
+      </p>
+
+      <!-- Floating Pill Search Bar -->
+      <div class="w-full max-w-2xl mt-gutter-sm flex flex-col gap-gutter-sm">
+        <form id="repo-search-form" data-component-id="searchbar-standard" data-component-type="searchbar" data-component-variant="standard" role="search" class="flex items-center gap-gutter-xs sm:gap-gutter-sm p-gutter-xs pl-gutter-md rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-[0_8px_28px_rgba(17,19,24,0.06)] focus-within:border-ink dark:focus-within:border-white transition-colors">
+          <span class="font-mono text-mono-md text-ink-muted dark:text-dark-ink-muted select-none" aria-hidden="true">@</span>
+          <input id="username-input" type="search" aria-label="GitHub username" value="" placeholder="Enter username or @username (e.g. torvalds, mojombo)" class="flex-1 min-w-0 bg-transparent border-0 focus:ring-0 font-body text-body-md text-ink dark:text-dark-ink placeholder:text-ink-muted dark:placeholder:text-dark-ink-muted">
+          <button id="analyze-btn" data-component-id="button-primary" data-component-type="button" data-component-variant="primary" type="submit" class="shrink-0 inline-flex items-center justify-center px-gutter-lg py-gutter-sm rounded-full bg-ink dark:bg-white text-white dark:text-ink font-label text-label-lg hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink">
+            <span data-design-text-token="label-lg">Analyze Repos</span>
+          </button>
+        </form>
+
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-gutter-sm px-gutter-sm pt-gutter-xs">
+          <p class="font-body text-label-md text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-md">
+            Backed by 8 hand-crafted algorithms, Bloom filter &amp; H2 caching.
+          </p>
+          <div class="flex items-center gap-gutter-xs flex-wrap justify-center">
+            <span class="font-label text-label-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-sm">Try:</span>
+            <button type="button" class="quick-sample px-gutter-sm py-gutter-xs rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline font-mono text-mono-sm text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-white transition-colors" data-user="mojombo">@mojombo</button>
+            <button type="button" class="quick-sample px-gutter-sm py-gutter-xs rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline font-mono text-mono-sm text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-white transition-colors" data-user="torvalds">@torvalds</button>
+            <button type="button" class="quick-sample px-gutter-sm py-gutter-xs rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline font-mono text-mono-sm text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-white transition-colors" data-user="rohankapoor0">@rohankapoor0</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error State Banner -->
+    <section id="error-state" class="hidden" aria-live="polite">
+      <div class="p-gutter-lg rounded-lg bg-badge-needs-bg border border-badge-needs-fg/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-gutter-md">
+        <div class="flex items-center gap-gutter-md">
+          <span class="material-symbols-outlined text-[24px] text-badge-needs-fg shrink-0" aria-hidden="true">error</span>
+          <div class="flex flex-col gap-gutter-xs">
+            <h2 id="error-title" class="font-title text-title-md text-badge-needs-fg" data-design-text-token="title-md">GitHub profile not found (404)</h2>
+            <p id="error-message" class="font-body text-body-md text-badge-needs-fg/90" data-design-text-token="body-md">
+              We couldn&#39;t locate a public GitHub user or organization with that handle.
+            </p>
+          </div>
+        </div>
+        <button id="error-reset-btn" type="button" class="shrink-0 px-gutter-md py-gutter-xs rounded-full bg-ink text-white font-label text-label-md hover:opacity-90 transition-opacity">
+          <span data-design-text-token="label-md">Dismiss</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Loading State Skeleton -->
+    <section id="loading-state" class="hidden flex-col gap-gutter-lg" aria-live="polite">
+      <div class="p-gutter-md rounded-md bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline flex items-center justify-between gap-gutter-md">
+        <div class="flex items-center gap-gutter-sm">
+          <span class="material-symbols-outlined text-[20px] text-ink dark:text-white animate-spin" aria-hidden="true">progress_activity</span>
+          <span id="loading-status-text" class="font-mono text-mono-md text-ink dark:text-dark-ink" data-design-text-token="mono-md">Checking Bloom filter...</span>
+        </div>
+        <span class="font-mono text-mono-sm text-ink-muted dark:text-dark-ink-muted tabular-nums" data-design-text-token="mono-sm">H2 Cache Lookup</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter-md">
+        <div class="h-32 rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline p-gutter-lg animate-pulse"></div>
+        <div class="h-32 rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline p-gutter-lg animate-pulse"></div>
+        <div class="h-32 rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline p-gutter-lg animate-pulse"></div>
+        <div class="h-32 rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline p-gutter-lg animate-pulse"></div>
+      </div>
+    </section>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard-content" class="hidden flex flex-col gap-gutter-xl">
+
+      <!-- Bento Overview Grid: 4 KPI Cards + Score Distribution Chart -->
+      <section aria-label="Profile hygiene overview" class="flex flex-col gap-gutter-md">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter-md items-stretch">
+          <!-- KPI 1 -->
+          <article class="h-full p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-[0_2px_12px_rgba(17,19,24,0.02)] flex flex-col justify-between gap-gutter-sm">
+            <span class="font-label text-label-md text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-md">Repositories Analyzed</span>
+            <div id="kpi-repos-analyzed" class="font-mono text-mono-lg tabular-nums text-ink dark:text-dark-ink" data-design-text-token="mono-lg">--</div>
+            <p id="kpi-repos-subtitle" class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="body-sm">Public repos</p>
+          </article>
+
+          <!-- KPI 2 -->
+          <article class="h-full p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-[0_2px_12px_rgba(17,19,24,0.02)] flex flex-col justify-between gap-gutter-sm">
+            <span class="font-label text-label-md text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-md">Median Hygiene Score</span>
+            <div class="flex items-baseline gap-gutter-xs">
+              <span id="kpi-median-score" class="font-mono text-mono-lg tabular-nums text-ink dark:text-dark-ink" data-design-text-token="mono-lg">--</span>
+              <span class="font-mono text-mono-md text-ink-muted dark:text-dark-ink-muted">/ 100</span>
+            </div>
+            <p id="kpi-median-subtitle" class="font-body text-body-sm text-badge-good-fg dark:text-chart-good" data-design-text-token="body-sm">Deterministic rubric</p>
+          </article>
+
+          <!-- KPI 3 -->
+          <article class="h-full p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-[0_2px_12px_rgba(17,19,24,0.02)] flex flex-col justify-between gap-gutter-sm">
+            <span class="font-label text-label-md text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-md">Stale Repositories</span>
+            <div id="kpi-stale-repos" class="font-mono text-mono-lg tabular-nums text-ink dark:text-dark-ink" data-design-text-token="mono-lg">--</div>
+            <p id="kpi-stale-subtitle" class="font-body text-body-sm text-badge-fair-fg dark:text-chart-fair" data-design-text-token="body-sm">Inactive &gt; 12 months</p>
+          </article>
+
+          <!-- KPI 4 -->
+          <article class="h-full p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-[0_2px_12px_rgba(17,19,24,0.02)] flex flex-col justify-between gap-gutter-sm">
+            <span class="font-label text-label-md text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-md">Overall Hygiene Tier</span>
+            <div>
+              <span id="kpi-hygiene-tier" class="inline-flex items-center px-gutter-md py-gutter-xs rounded-full bg-badge-good-bg text-badge-good-fg font-title text-title-md" data-design-text-token="title-md">--</span>
+            </div>
+            <p id="kpi-hygiene-subtitle" class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="body-sm">Hygiene standing</p>
+          </article>
+        </div>
+
+        <!-- Score Distribution Card -->
+        <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-[0_2px_12px_rgba(17,19,24,0.02)] flex flex-col gap-gutter-md">
+          <header class="flex flex-wrap items-center justify-between gap-gutter-sm">
+            <div>
+              <h2 class="font-title text-title-md text-ink dark:text-dark-ink" data-design-text-token="title-md">Score Distribution</h2>
+              <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="body-sm">Repository count across 100-point rubric brackets</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-gutter-md">
+              <span class="inline-flex items-center gap-gutter-xs font-label text-label-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-sm"><span class="w-2.5 h-2.5 rounded-full bg-chart-excellent"></span>90–100</span>
+              <span class="inline-flex items-center gap-gutter-xs font-label text-label-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-sm"><span class="w-2.5 h-2.5 rounded-full bg-chart-good"></span>75–89</span>
+              <span class="inline-flex items-center gap-gutter-xs font-label text-label-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-sm"><span class="w-2.5 h-2.5 rounded-full bg-chart-fair"></span>50–74</span>
+              <span class="inline-flex items-center gap-gutter-xs font-label text-label-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-sm"><span class="w-2.5 h-2.5 rounded-full bg-chart-needs"></span>0–49</span>
+            </div>
+          </header>
+          <div class="w-full h-48">
+            <canvas id="score-distribution-chart" aria-label="Score distribution bar chart"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <!-- Repository Analysis Table Section -->
+      <section class="flex flex-col gap-gutter-md">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-gutter-xs">
+          <div>
+            <h2 class="font-headline text-headline-md text-ink dark:text-dark-ink font-semibold">Ranked Repositories</h2>
+            <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">Sorted by hygiene score using max-heap order. Select any repository to inspect deductions.</p>
+          </div>
+          <span class="inline-flex items-center px-gutter-md py-gutter-xs rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline font-label text-label-sm text-ink-muted dark:text-dark-ink-muted self-start sm:self-auto">
+            Click row for details
+          </span>
+        </div>
+
+        <div class="w-full overflow-x-auto rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-[0_2px_12px_rgba(17,19,24,0.02)]">
+          <table class="w-full text-left border-collapse min-w-[760px]">
+            <thead>
+              <tr class="border-b border-hairline dark:border-dark-hairline bg-card-subtle dark:bg-dark-card-subtle">
+                <th scope="col" class="px-gutter-md py-gutter-sm text-ink-muted dark:text-dark-ink-muted"><span class="font-label text-label-md" data-design-text-token="label-md">Rank</span></th>
+                <th scope="col" class="px-gutter-md py-gutter-sm text-ink-muted dark:text-dark-ink-muted"><span class="font-label text-label-md" data-design-text-token="label-md">Repository</span></th>
+                <th scope="col" class="px-gutter-md py-gutter-sm text-ink-muted dark:text-dark-ink-muted"><span class="font-label text-label-md" data-design-text-token="label-md">Score</span></th>
+                <th scope="col" class="px-gutter-md py-gutter-sm text-ink-muted dark:text-dark-ink-muted"><span class="font-label text-label-md" data-design-text-token="label-md">Language</span></th>
+                <th scope="col" class="px-gutter-md py-gutter-sm text-ink-muted dark:text-dark-ink-muted"><span class="font-label text-label-md" data-design-text-token="label-md">Stars &amp; Forks</span></th>
+                <th scope="col" class="px-gutter-md py-gutter-sm text-ink-muted dark:text-dark-ink-muted"><span class="font-label text-label-md" data-design-text-token="label-md">Last Push</span></th>
+                <th scope="col" class="px-gutter-md py-gutter-sm text-ink-muted dark:text-dark-ink-muted text-right"><span class="font-label text-label-md" data-design-text-token="label-md">Cache</span></th>
+              </tr>
+            </thead>
+            <tbody id="ranked-repos-tbody" class="divide-y divide-hairline-subtle dark:divide-dark-hairline"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="mt-gutter-xl border-t border-hairline dark:border-dark-hairline py-gutter-xl text-center font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">
+    <div class="max-w-7xl mx-auto px-gutter-md flex flex-col sm:flex-row items-center justify-between gap-gutter-md">
+      <span>RepoLens • Deterministic Repository Hygiene Evaluator</span>
+      <div class="flex items-center gap-gutter-lg">
+        <a href="/" class="hover:text-ink dark:hover:text-white transition-colors">Home</a>
+        <a href="/rubric.html" class="hover:text-ink dark:hover:text-white transition-colors">Scoring Rubric</a>
+        <a href="/mcp.html" class="text-accent-blue dark:text-blue-400 font-semibold transition-colors">MCP Server</a>
+        <a href="#top" class="hover:text-ink dark:hover:text-white transition-colors">Back to top</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Repo Detail Centered Modal Popup -->
+  <dialog id="repo-detail-dialog" aria-labelledby="modal-repo-title" class="fixed inset-0 m-auto w-[92vw] max-w-[660px] h-fit max-h-[86vh] flex-col rounded-2xl bg-card dark:bg-dark-card text-ink dark:text-dark-ink border border-hairline dark:border-dark-hairline shadow-[0_24px_64px_rgba(17,19,24,0.18)] p-0 overflow-hidden focus:outline-none">
+    <!-- Sticky Modal Header -->
+    <header class="p-5 sm:p-6 pb-4 border-b border-hairline dark:border-dark-hairline bg-card/95 dark:bg-dark-card/95 backdrop-blur-md flex items-start justify-between gap-gutter-md shrink-0 z-10">
+      <div class="flex flex-col gap-gutter-xs">
+        <div class="flex flex-wrap items-center gap-gutter-sm">
+          <h2 id="modal-repo-title" class="font-mono text-headline-md text-ink dark:text-dark-ink font-semibold">Repository Details</h2>
+          <span id="modal-repo-score" class="px-gutter-sm py-gutter-xs rounded-full bg-badge-good-bg text-badge-good-fg font-mono text-mono-sm tabular-nums font-semibold">81 / 100</span>
+        </div>
+        <a id="modal-repo-link" href="https://github.com/Repository Details" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-gutter-xs font-label text-label-md text-accent-blue hover:underline">
+          <span>View on GitHub</span>
+          <span class="material-symbols-outlined text-[15px]" aria-hidden="true">open_in_new</span>
+        </a>
+      </div>
+      <button id="close-repo-dialog" type="button" aria-label="Close dialog" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline hover:bg-hairline dark:hover:bg-dark-hairline text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-white transition-colors shrink-0">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
+      </button>
+    </header>
+
+    <!-- Scrollable Modal Body -->
+    <div id="modal-scroll-body" class="p-5 sm:p-6 pt-4 overflow-y-auto flex-1 flex flex-col gap-6 overscroll-contain">
+      <!-- Section 1: Repository Intelligence (V2) -->
+      <section id="modal-intelligence-container" class="flex flex-col gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[20px] text-accent-blue" aria-hidden="true">psychology</span>
+            <h3 class="font-title text-title-md text-ink dark:text-dark-ink font-semibold">Repository Intelligence</h3>
+          </div>
+          <span id="modal-project-type" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-accent-blue/10 text-accent-blue border border-accent-blue/20"></span>
+        </div>
+        <p id="modal-project-summary" class="text-body-sm text-ink-muted dark:text-dark-ink-muted leading-relaxed"></p>
+
+        <!-- Detected Technologies -->
+        <div class="flex flex-col gap-1.5 pt-1">
+          <span class="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-dark-ink-muted">Detected Tech Stack</span>
+          <div id="modal-tech-stack" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- Architecture Observations & Positive Findings -->
+        <div id="modal-insights-wrapper" class="flex flex-col gap-2 pt-1">
+          <div id="modal-positive-findings" class="flex flex-col gap-1.5"></div>
+          <div id="modal-architecture-observations" class="flex flex-col gap-1.5"></div>
+        </div>
+
+        <!-- Project-Specific Improvement Opportunities -->
+        <div id="modal-project-improvements-wrapper" class="flex flex-col gap-1.5 pt-1">
+          <span class="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-dark-ink-muted">Tailored Engineering Opportunities</span>
+          <div id="modal-project-improvements" class="flex flex-col gap-2"></div>
+        </div>
+      </section>
+
+      <!-- Section 2: Rubric Category Breakdown -->
+      <section class="flex flex-col gap-gutter-sm border-t border-hairline dark:border-dark-hairline pt-5">
+        <h3 class="font-title text-title-md text-ink dark:text-dark-ink font-semibold">Rubric Category Breakdown</h3>
+        <div id="modal-categories" class="grid grid-cols-1 gap-gutter-sm"></div>
+      </section>
+
+      <!-- Section 3: Itemized Deductions -->
+      <section class="flex flex-col gap-gutter-sm border-t border-hairline dark:border-dark-hairline pt-5">
+        <h3 class="font-title text-title-md text-ink dark:text-dark-ink font-semibold">Itemized Deductions</h3>
+        <div id="modal-deductions" class="flex flex-col gap-gutter-sm"></div>
+      </section>
+    </div>
+  </dialog>
+
+  <!-- Scoring Rubric Dialog -->
+  <dialog id="rubric-dialog" aria-labelledby="rubric-dialog-title" class="m-auto w-full max-w-lg rounded-lg bg-card dark:bg-dark-card text-ink dark:text-dark-ink border border-hairline dark:border-dark-hairline p-gutter-lg">
+    <header class="flex items-center justify-between gap-gutter-md pb-gutter-md border-b border-hairline dark:border-dark-hairline">
+      <h2 id="rubric-dialog-title" class="font-headline text-headline-md">Deterministic 100-Point Rubric</h2>
+      <button id="close-rubric-dialog" type="button" aria-label="Close rubric dialog" class="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-card-subtle dark:hover:bg-dark-card-subtle text-ink-muted dark:text-dark-ink-muted">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <div class="py-gutter-md flex flex-col gap-gutter-sm">
+      <div class="flex items-center justify-between py-gutter-xs border-b border-hairline-subtle dark:border-dark-hairline"><span class="font-body text-body-md">Documentation (README, badges, examples)</span><span class="font-mono text-mono-sm tabular-nums text-accent-blue">25 pts</span></div>
+      <div class="flex items-center justify-between py-gutter-xs border-b border-hairline-subtle dark:border-dark-hairline"><span class="font-body text-body-md">Engineering Hygiene (CI, tests, linter)</span><span class="font-mono text-mono-sm tabular-nums text-accent-blue">25 pts</span></div>
+      <div class="flex items-center justify-between py-gutter-xs border-b border-hairline-subtle dark:border-dark-hairline"><span class="font-body text-body-md">Maintenance (commit recency, releases)</span><span class="font-mono text-mono-sm tabular-nums text-accent-blue">20 pts</span></div>
+      <div class="flex items-center justify-between py-gutter-xs border-b border-hairline-subtle dark:border-dark-hairline"><span class="font-body text-body-md">Safety &amp; Security (Dependabot, SECURITY.md)</span><span class="font-mono text-mono-sm tabular-nums text-accent-blue">15 pts</span></div>
+      <div class="flex items-center justify-between py-gutter-xs border-b border-hairline-subtle dark:border-dark-hairline"><span class="font-body text-body-md">Licensing &amp; Community (SPDX, CONTRIBUTING)</span><span class="font-mono text-mono-sm tabular-nums text-accent-blue">10 pts</span></div>
+      <div class="flex items-center justify-between py-gutter-xs"><span class="font-body text-body-md">Project Structure (.gitignore, clean root)</span><span class="font-mono text-mono-sm tabular-nums text-accent-blue">5 pts</span></div>
+    </div>
+  </dialog>
+
+    <script>
+    (function () {
+      let currentAnalysisData = null;
+      const repoDetailsCache = new Map();
+      let distributionChart = null;
+
+      function getTierInfo(score) {
+        if (score >= 85) return { label: 'Excellent', pill: 'bg-badge-excellent-bg text-badge-excellent-fg', bar: 'bg-chart-excellent', hex: '#7C8CF8' };
+        if (score >= 70) return { label: 'Good', pill: 'bg-badge-good-bg text-badge-good-fg', bar: 'bg-chart-good', hex: '#3B82F6' };
+        if (score >= 50) return { label: 'Fair', pill: 'bg-badge-fair-bg text-badge-fair-fg', bar: 'bg-chart-fair', hex: '#F4B459' };
+        return { label: 'Needs Work', pill: 'bg-badge-needs-bg text-badge-needs-fg', bar: 'bg-chart-needs', hex: '#F26464' };
+      }
+
+      const PROJECT_TYPE_META = {
+        AI_MACHINE_LEARNING: { name: 'AI / Machine Learning', icon: 'psychology' },
+        DATA_SCIENCE: { name: 'Data Science & Analytics', icon: 'analytics' },
+        REACT_FRONTEND: { name: 'React / Modern Frontend', icon: 'devices' },
+        BACKEND_API: { name: 'Backend / REST API', icon: 'dns' },
+        FULLSTACK_APP: { name: 'Full-Stack Application', icon: 'layers' },
+        JAVA_ENTERPRISE: { name: 'Java / JVM Application', icon: 'coffee' },
+        PYTHON_APP: { name: 'Python Application', icon: 'terminal' },
+        MOBILE_APP: { name: 'Mobile Application', icon: 'smartphone' },
+        CLI_TOOL: { name: 'CLI / Developer Tool', icon: 'build' },
+        LIBRARY_PACKAGE: { name: 'Open-Source Library', icon: 'inventory_2' },
+        DOCUMENTATION_PROJECT: { name: 'Documentation / Static', icon: 'article' },
+        GENERAL_SOFTWARE: { name: 'General Software Project', icon: 'code' }
+      };
+
+      function formatProjectType(typeKey) {
+        if (!typeKey) return { name: 'General Software', icon: 'code' };
+        if (typeof typeKey === 'object' && typeKey.displayName) {
+          return { name: typeKey.displayName, icon: typeKey.iconName || 'code' };
+        }
+        const meta = PROJECT_TYPE_META[typeKey];
+        return meta || { name: String(typeKey).replace(/_/g, ' '), icon: 'code' };
+      }
+
+      function formatNumber(num) {
+        if (num === null || num === undefined) return '0';
+        return Number(num).toLocaleString();
+      }
+
+      function formatTimeAgo(isoString) {
+        if (!isoString) return 'Unknown';
+        try {
+          const date = new Date(isoString);
+          const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
+          if (diffSec < 60) return 'Just now';
+          const diffMin = Math.floor(diffSec / 60);
+          if (diffMin < 60) return diffMin + 'm ago';
+          const diffHours = Math.floor(diffMin / 60);
+          if (diffHours < 24) return diffHours + 'h ago';
+          const diffDays = Math.floor(diffHours / 24);
+          if (diffDays < 30) return diffDays + 'd ago';
+          const diffMonths = Math.floor(diffDays / 30);
+          if (diffMonths < 12) return diffMonths + ' mo ago';
+          return Math.floor(diffMonths / 12) + 'y ago';
+        } catch (e) {
+          return isoString;
+        }
+      }
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      // DOM Elements
+      const usernameInput = document.getElementById('username-input');
+      const searchForm = document.getElementById('repo-search-form');
+      const loadingEl = document.getElementById('loading-state');
+      const errorEl = document.getElementById('error-state');
+      const dashboardEl = document.getElementById('dashboard-content');
+      const loadingText = document.getElementById('loading-status-text');
+      const headerApiQuota = document.getElementById('header-api-quota');
+
+      // KPIs
+      const kpiReposAnalyzed = document.getElementById('kpi-repos-analyzed');
+      const kpiReposSubtitle = document.getElementById('kpi-repos-subtitle');
+      const kpiMedianScore = document.getElementById('kpi-median-score');
+      const kpiMedianSubtitle = document.getElementById('kpi-median-subtitle');
+      const kpiStaleRepos = document.getElementById('kpi-stale-repos');
+      const kpiStaleSubtitle = document.getElementById('kpi-stale-subtitle');
+      const kpiHygieneTier = document.getElementById('kpi-hygiene-tier');
+      const kpiHygieneSubtitle = document.getElementById('kpi-hygiene-subtitle');
+
+      // Containers
+      const tbody = document.getElementById('ranked-repos-tbody');
+
+
+      // Dialogs
+      const repoDialog = document.getElementById('repo-detail-dialog');
+      const rubricDialog = document.getElementById('rubric-dialog');
+
+      // Chart
+      function renderChart(scoreBands) {
+        const canvas = document.getElementById('score-distribution-chart');
+        if (!canvas || typeof Chart === 'undefined') return;
+        const isDark = document.documentElement.classList.contains('dark');
+        const textColor = isDark ? '#9CA3AF' : '#6B7280';
+        const gridColor = isDark ? 'rgba(38, 44, 56, 0.7)' : 'rgba(229, 231, 235, 0.8)';
+
+        const bands = scoreBands || { excellent: 0, good: 0, fair: 0, needsWork: 0 };
+        const dataVals = [bands.excellent || 0, bands.good || 0, bands.fair || 0, bands.needsWork || 0];
+
+        if (distributionChart) distributionChart.destroy();
+        distributionChart = new Chart(canvas.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: ['90–100 (Excellent)', '75–89 (Good)', '50–74 (Fair)', '0–49 (Needs Work)'],
+            datasets: [{
+              label: 'Repositories',
+              data: dataVals,
+              backgroundColor: ['#7C8CF8', '#3B82F6', '#F4B459', '#F26464'],
+              borderRadius: 10,
+              barPercentage: 0.48
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter, sans-serif', size: 12 } } },
+              y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, color: textColor, font: { family: 'Inter, sans-serif', size: 11 } }, grid: { color: gridColor } }
+            }
+          }
+        });
+      }
+
+      // Dialogs controls
+      function closeRepoModal() {
+        document.body.style.overflow = '';
+        if (repoDialog.open) repoDialog.close();
+      }
+
+      document.getElementById('close-repo-dialog').addEventListener('click', closeRepoModal);
+
+      repoDialog.addEventListener('close', function () {
+        document.body.style.overflow = '';
+      });
+
+      // Click outside centered modal to close
+      repoDialog.addEventListener('click', function (e) {
+        const rect = repoDialog.getBoundingClientRect();
+        const isInDialog = (
+          rect.top <= e.clientY && e.clientY <= rect.top + rect.height &&
+          rect.left <= e.clientX && e.clientX <= rect.left + rect.width
+        );
+        if (!isInDialog) closeRepoModal();
+      });
+
+      document.getElementById('open-rubric-btn').addEventListener('click', function () {
+        if (typeof rubricDialog.showModal === 'function') rubricDialog.showModal();
+      });
+      document.getElementById('close-rubric-dialog').addEventListener('click', function () { rubricDialog.close(); });
+
+      rubricDialog.addEventListener('click', function (e) {
+        const rect = rubricDialog.getBoundingClientRect();
+        const isInDialog = (
+          rect.top <= e.clientY && e.clientY <= rect.top + rect.height &&
+          rect.left <= e.clientX && e.clientX <= rect.left + rect.width
+        );
+        if (!isInDialog) rubricDialog.close();
+      });
+
+
+      // Tabs switching
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      const tabPanels = document.querySelectorAll('[role="tabpanel"]');
+      tabButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const targetId = btn.getAttribute('aria-controls');
+          tabButtons.forEach(function (b) {
+            const active = b === btn;
+            b.setAttribute('aria-selected', active ? 'true' : 'false');
+            b.tabIndex = active ? 0 : -1;
+            b.className = active
+              ? 'tab-btn px-gutter-md py-gutter-sm rounded-full bg-card dark:bg-dark-card-subtle text-ink dark:text-dark-ink shadow-sm font-label text-label-md transition-all duration-150'
+              : 'tab-btn px-gutter-md py-gutter-sm rounded-full text-ink-muted dark:text-dark-ink-muted font-label text-label-md hover:text-ink dark:hover:text-dark-ink transition-all duration-150';
+          });
+          tabPanels.forEach(function (panel) { panel.hidden = panel.id !== targetId; });
+        });
+      });
+
+      // Theme toggle
+      const themeBtn = document.getElementById('theme-toggle-btn');
+      const themeIcon = document.getElementById('theme-toggle-icon');
+      themeBtn.addEventListener('click', function () {
+        const willBeDark = !document.documentElement.classList.contains('dark');
+        document.documentElement.classList.toggle('dark', willBeDark);
+        themeIcon.textContent = willBeDark ? 'light_mode' : 'dark_mode';
+        if (currentAnalysisData && currentAnalysisData.stats) {
+          renderChart(currentAnalysisData.stats.scoreBands);
+        }
+      });
+
+      // Open Single Repo Modal
+      async function openRepoModal(repoShort) {
+        const owner = repoShort.owner || (currentAnalysisData ? currentAnalysisData.username : '');
+        const repoName = repoShort.name;
+        const fullName = repoShort.fullName || (owner + '/' + repoName);
+
+        document.getElementById('modal-repo-title').textContent = fullName;
+        document.getElementById('modal-repo-link').href = 'https://github.com/' + fullName;
+
+        const tier = getTierInfo(repoShort.score || 0);
+        const scoreEl = document.getElementById('modal-repo-score');
+        scoreEl.textContent = (repoShort.score || 0) + ' / 100';
+        scoreEl.className = 'px-gutter-sm py-gutter-xs rounded-full font-mono text-mono-sm tabular-nums ' + tier.pill;
+
+
+        const catContainer = document.getElementById('modal-categories');
+        const dedContainer = document.getElementById('modal-deductions');
+        const typeEl = document.getElementById('modal-project-type');
+        const summaryEl = document.getElementById('modal-project-summary');
+        const techContainer = document.getElementById('modal-tech-stack');
+        const posContainer = document.getElementById('modal-positive-findings');
+        const obsContainer = document.getElementById('modal-architecture-observations');
+        const impContainer = document.getElementById('modal-project-improvements');
+
+        if (typeEl) typeEl.textContent = 'Analyzing archetype...';
+        if (summaryEl) summaryEl.textContent = 'Detecting project-specific technologies and conventions...';
+        if (techContainer) techContainer.innerHTML = '<div class="text-xs text-ink-muted animate-pulse">Scanning manifests...</div>';
+        if (posContainer) posContainer.innerHTML = '';
+        if (obsContainer) obsContainer.innerHTML = '';
+        if (impContainer) impContainer.innerHTML = '';
+
+        catContainer.innerHTML = '<div class="py-2 text-ink-muted text-sm animate-pulse">Loading category metrics...</div>';
+        dedContainer.innerHTML = '<div class="py-2 text-ink-muted text-sm animate-pulse">Loading deductions...</div>';
+
+        const scrollBody = document.getElementById('modal-scroll-body');
+        if (scrollBody) scrollBody.scrollTop = 0;
+        document.body.style.overflow = 'hidden';
+        if (typeof repoDialog.showModal === 'function') repoDialog.showModal();
+
+                try {
+          let detail = repoDetailsCache.get(fullName);
+          if (!detail) {
+            const res = await fetch('/api/repo/' + encodeURIComponent(owner) + '/' + encodeURIComponent(repoName));
+            if (res.ok) {
+              detail = await res.json();
+              repoDetailsCache.set(fullName, detail);
+            } else {
+              catContainer.innerHTML = '<div class="text-xs text-badge-needs-fg">Unable to load repo breakdown (HTTP ' + res.status + ').</div>';
+              dedContainer.innerHTML = '<div class="text-xs text-badge-needs-fg">Unable to load deductions.</div>';
+              return;
+            }
+          }
+
+          if (detail) {
+            if (detail.totalScore !== undefined) {
+              const liveTier = getTierInfo(detail.totalScore);
+              scoreEl.textContent = detail.totalScore + ' / 100';
+              scoreEl.className = 'px-gutter-sm py-gutter-xs rounded-full font-mono text-mono-sm tabular-nums ' + liveTier.pill;
+            }
+
+            // Section 1: Repository Intelligence
+            const intel = detail.intelligence || (detail.score && detail.score.intelligence);
+            if (intel) {
+              const pType = formatProjectType(intel.primaryType);
+              if (typeEl) {
+                typeEl.innerHTML = '<span class="material-symbols-outlined text-[14px] mr-1 align-text-bottom">' + pType.icon + '</span>' + escapeHtml(pType.name);
+              }
+              if (summaryEl) {
+                summaryEl.textContent = intel.architectureSummary || 'Architecture and conventions analyzed.';
+              }
+
+              // Tech stack badges
+              if (techContainer) {
+                techContainer.innerHTML = '';
+                const techs = intel.technologies || [];
+                if (techs.length === 0) {
+                  techContainer.innerHTML = '<span class="text-xs text-ink-muted dark:text-dark-ink-muted italic">Standard repository structure</span>';
+                } else {
+                  techs.forEach(function (tech) {
+                    const badge = document.createElement('span');
+                    badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline text-xs font-mono font-medium text-ink dark:text-dark-ink';
+                    badge.title = tech.evidence || '';
+                    badge.innerHTML =
+                      '<span class="w-1.5 h-1.5 rounded-full bg-accent-blue"></span>' +
+                      '<span>' + escapeHtml(tech.name) + '</span>' +
+                      '<span class="text-[9px] uppercase font-bold text-ink-muted dark:text-dark-ink-muted px-1 rounded bg-card-subtle dark:bg-dark-card-subtle">' + escapeHtml(tech.category || '') + '</span>';
+                    techContainer.appendChild(badge);
+                  });
+                }
+              }
+
+              // Positive findings
+              if (posContainer) {
+                posContainer.innerHTML = '';
+                const posFindings = intel.positiveFindings || [];
+                if (posFindings.length > 0) {
+                  const header = document.createElement('div');
+                  header.className = 'flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mt-1';
+                  header.innerHTML = '<span class="material-symbols-outlined text-[16px]">verified</span> Healthy Practices (' + posFindings.length + ')';
+                  posContainer.appendChild(header);
+
+                  posFindings.forEach(function (f) {
+                    const card = document.createElement('div');
+                    card.className = 'p-3 rounded-xl bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-2.5';
+                    card.innerHTML =
+                      '<span class="material-symbols-outlined text-[18px] text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">check_circle</span>' +
+                      '<div class="flex flex-col gap-0.5">' +
+                      '<span class="font-body text-body-sm font-semibold text-emerald-800 dark:text-emerald-200">' + escapeHtml(f.title) + '</span>' +
+                      '<span class="font-body text-xs text-emerald-700/80 dark:text-emerald-300/80 leading-relaxed">' + escapeHtml(f.description) + '</span>' +
+                      (f.evidence ? '<span class="font-mono text-mono-xs text-ink-muted dark:text-dark-ink-muted mt-0.5">Checked: ' + escapeHtml(f.evidence) + '</span>' : '') +
+                      '</div>';
+                    posContainer.appendChild(card);
+                  });
+                }
+              }
+
+              // Architecture observations
+              if (obsContainer) {
+                obsContainer.innerHTML = '';
+                const observations = intel.architectureObservations || [];
+                if (observations.length > 0) {
+                  const header = document.createElement('div');
+                  header.className = 'flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-dark-ink-muted mt-1';
+                  header.innerHTML = '<span class="material-symbols-outlined text-[16px]">account_tree</span> Architecture Observations';
+                  obsContainer.appendChild(header);
+
+                  observations.forEach(function (obs) {
+                    const card = document.createElement('div');
+                    card.className = 'p-3 rounded-xl bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline flex items-start gap-2.5';
+                    card.innerHTML =
+                      '<span class="material-symbols-outlined text-[18px] text-accent-blue shrink-0 mt-0.5">info</span>' +
+                      '<div class="flex flex-col gap-0.5">' +
+                      '<span class="font-body text-body-sm font-semibold text-ink dark:text-dark-ink">' + escapeHtml(obs.title) + '</span>' +
+                      '<span class="font-body text-xs text-ink-muted dark:text-dark-ink-muted leading-relaxed">' + escapeHtml(obs.observation) + '</span>' +
+                      (obs.evidence ? '<span class="font-mono text-mono-xs text-ink-muted dark:text-dark-ink-muted mt-0.5">Basis: ' + escapeHtml(obs.evidence) + '</span>' : '') +
+                      '</div>';
+                    obsContainer.appendChild(card);
+                  });
+                }
+              }
+
+              // Tailored project improvements
+              if (impContainer) {
+                impContainer.innerHTML = '';
+                const recs = intel.recommendations || [];
+                const impWrapper = document.getElementById('modal-project-improvements-wrapper');
+                if (recs.length === 0) {
+                  if (impWrapper) impWrapper.classList.add('hidden');
+                } else {
+                  if (impWrapper) impWrapper.classList.remove('hidden');
+                  recs.forEach(function (rec) {
+                    const card = document.createElement('div');
+                    card.className = 'p-3.5 rounded-xl bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline flex flex-col gap-2 shadow-xs';
+                    let priorityBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-500/10 text-blue-600 border border-blue-500/20">' + escapeHtml(rec.priority) + ' PRIORITY</span>';
+                    if (rec.priority === 'HIGH') {
+                      priorityBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-500/10 text-rose-600 border border-rose-500/20">HIGH PRIORITY</span>';
+                    } else if (rec.priority === 'MEDIUM') {
+                      priorityBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-500/10 text-amber-600 border border-amber-500/20">MEDIUM PRIORITY</span>';
+                    }
+
+                    let snippetHtml = '';
+                    if (rec.snippet) {
+                      snippetHtml =
+                        '<details class="text-xs text-ink-muted dark:text-dark-ink-muted cursor-pointer mt-1">' +
+                        '<summary class="font-medium hover:underline text-accent-blue select-none flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">code</span> View Recommended Template / Code</summary>' +
+                        '<pre class="mt-1.5 p-2.5 rounded-lg bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline font-mono text-[11px] overflow-x-auto text-ink dark:text-dark-ink"><code>' + escapeHtml(rec.snippet) + '</code></pre>' +
+                        '</details>';
+                    }
+
+                    card.innerHTML =
+                      '<div class="flex items-center justify-between gap-2">' +
+                      '<div class="flex items-center gap-2">' +
+                      priorityBadge +
+                      '<span class="font-body text-body-sm font-semibold text-ink dark:text-dark-ink">' + escapeHtml(rec.title) + '</span>' +
+                      '</div>' +
+                      '<span class="font-mono text-mono-xs text-ink-muted dark:text-dark-ink-muted">~' + rec.effortMinutes + 'm effort</span>' +
+                      '</div>' +
+                      '<div class="text-xs text-ink-muted dark:text-dark-ink-muted leading-relaxed">' + escapeHtml(rec.whyItMatters) + '</div>' +
+                      '<div class="p-2.5 rounded-lg bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline text-xs font-body text-ink dark:text-dark-ink flex items-start gap-2">' +
+                      '<span class="material-symbols-outlined text-[16px] text-accent-blue shrink-0 mt-0.5">tips_and_updates</span>' +
+                      '<div><span class="font-semibold text-accent-blue mr-1">Recommended Action:</span>' + escapeHtml(rec.suggestedAction) + '</div>' +
+                      '</div>' +
+                      (rec.relevantFilePath ? '<div class="font-mono text-mono-xs text-ink-muted dark:text-dark-ink-muted">Target: <code class="px-1.5 py-0.5 rounded bg-card-subtle dark:bg-dark-card-subtle font-semibold">' + escapeHtml(rec.relevantFilePath) + '</code></div>' : '') +
+                      snippetHtml;
+                    impContainer.appendChild(card);
+                  });
+                }
+              }
+            } else {
+              if (typeEl) typeEl.textContent = 'General Software';
+              if (summaryEl) summaryEl.textContent = 'Repository follows standard conventions.';
+              if (techContainer) techContainer.innerHTML = '<span class="text-xs text-ink-muted dark:text-dark-ink-muted">Standard codebase</span>';
+            }
+
+            const categories = detail.categories || (detail.score && detail.score.categoryScores) || {};
+            const deductions = detail.deductions || (detail.score && detail.score.deductions) || [];
+
+            // Category Breakdown
+            catContainer.innerHTML = '';
+            const catMaxes = {
+              DOCUMENTATION: { name: 'Documentation & Discoverability', max: 25 },
+              LICENSING_COMMUNITY: { name: 'Licensing & Community Standards', max: 10 },
+              MAINTENANCE: { name: 'Maintenance & Activity', max: 20 },
+              ENGINEERING_HYGIENE: { name: 'Engineering Hygiene', max: 25 },
+              SAFETY: { name: 'Safety & Secret Prevention', max: 15 },
+              STRUCTURE: { name: 'Repository Structure', max: 5 }
+            };
+
+            Object.entries(catMaxes).forEach(function ([key, meta]) {
+              const catData = categories[key];
+              const earned = (catData && typeof catData === 'object' && catData.score !== undefined)
+                ? catData.score
+                : (typeof catData === 'number' ? catData : 0);
+              const maxPts = (catData && typeof catData === 'object' && catData.maxPoints) ? catData.maxPoints : meta.max;
+              const catName = (catData && typeof catData === 'object' && catData.categoryName) ? catData.categoryName : meta.name;
+              const pct = maxPts > 0 ? Math.round((earned / maxPts) * 100) : 0;
+              const barTier = getTierInfo(pct);
+              const row = document.createElement('div');
+              row.className = 'flex flex-col gap-gutter-xs';
+              row.innerHTML =
+                '<div class="flex items-center justify-between text-body-sm">' +
+                '<span class="font-label text-label-md text-ink dark:text-dark-ink">' + escapeHtml(catName) + '</span>' +
+                '<span class="font-mono text-mono-sm tabular-nums text-ink-muted dark:text-dark-ink-muted">' + earned + ' / ' + maxPts + ' pts</span>' +
+                '</div>' +
+                '<div class="w-full h-2 rounded-full bg-hairline-subtle dark:bg-dark-card-subtle overflow-hidden">' +
+                '<div class="h-full rounded-full ' + barTier.bar + '" style="width: ' + pct + '%"></div>' +
+                '</div>';
+              catContainer.appendChild(row);
+            });
+
+            // Deductions
+            dedContainer.innerHTML = '';
+            if (deductions.length === 0) {
+              dedContainer.innerHTML = '<div class="p-4 rounded-xl bg-badge-excellent-bg text-badge-excellent-fg text-sm font-medium">✨ Clean hygiene! No deductions flagged on this repository.</div>';
+            } else {
+              deductions.forEach(function (d) {
+                const card = document.createElement('details');
+                card.open = true;
+                card.className = 'rounded-xl bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline p-4 transition-all duration-200';
+
+                // Format reason / problem cleanly
+                let reasonHtml = '';
+                const rawReason = d.evidence || d.reason || '';
+                if (rawReason.includes(': ') && (rawReason.includes(', ') || rawReason.length > 90)) {
+                  const colonIdx = rawReason.indexOf(': ');
+                  const title = rawReason.substring(0, colonIdx);
+                  const itemsStr = rawReason.substring(colonIdx + 2);
+                  const items = itemsStr.split(', ');
+                  if (items.length > 2) {
+                    let pills = '';
+                    items.forEach(function(item) {
+                      pills += '<span class="px-2 py-0.5 rounded-md bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline font-mono text-mono-xs text-ink dark:text-dark-ink break-all">' + escapeHtml(item.trim()) + '</span>';
+                    });
+                    reasonHtml =
+                      '<div class="flex flex-col gap-1.5">' +
+                      '<div class="font-body text-body-sm text-ink dark:text-dark-ink font-semibold flex items-center gap-1.5">' +
+                      '<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>' +
+                      '<span class="text-rose-600 dark:text-rose-400 font-bold mr-1">Problem:</span>' +
+                      escapeHtml(title) + ' (' + items.length + ' items detected):' +
+                      '</div>' +
+                      '<div class="max-h-36 overflow-y-auto p-2.5 rounded-xl bg-card/60 dark:bg-dark-card/60 border border-hairline dark:border-dark-hairline flex flex-wrap gap-1.5 overscroll-contain">' +
+                      pills +
+                      '</div>' +
+                      '</div>';
+                  } else {
+                    reasonHtml =
+                      '<div class="font-body text-body-sm text-ink dark:text-dark-ink flex items-start gap-2 leading-relaxed">' +
+                      '<span class="w-1.5 h-1.5 rounded-full bg-rose-500 mt-2 shrink-0"></span>' +
+                      '<div><span class="font-semibold text-rose-600 dark:text-rose-400 mr-1.5">Problem:</span>' + escapeHtml(rawReason) + '</div>' +
+                      '</div>';
+                  }
+                } else if (rawReason) {
+                  reasonHtml =
+                    '<div class="font-body text-body-sm text-ink dark:text-dark-ink flex items-start gap-2 leading-relaxed">' +
+                    '<span class="w-1.5 h-1.5 rounded-full bg-rose-500 mt-2 shrink-0"></span>' +
+                    '<div><span class="font-semibold text-rose-600 dark:text-rose-400 mr-1.5">Problem:</span>' + escapeHtml(rawReason) + '</div>' +
+                    '</div>';
+                }
+
+                if (d.whyItMatters) {
+                  reasonHtml += '<p class="text-xs text-ink-muted dark:text-dark-ink-muted pl-3.5 mt-0.5 leading-normal italic">' + escapeHtml(d.whyItMatters) + '</p>';
+                }
+
+                card.innerHTML =
+                  '<summary class="flex items-center justify-between gap-gutter-sm cursor-pointer list-none select-none">' +
+                  '<div class="flex items-center gap-gutter-sm">' +
+                  '<span class="px-gutter-sm py-gutter-xs rounded-full bg-badge-needs-bg text-badge-needs-fg font-mono text-mono-sm tabular-nums font-semibold">-' + (d.pointsLost || 0) + ' pts</span>' +
+                  '<span class="font-label text-label-md text-ink dark:text-dark-ink font-semibold">' + escapeHtml(d.category || 'General') + '</span>' +
+                  '</div>' +
+                  '<span class="material-symbols-outlined text-[18px] text-ink-muted dark:text-dark-ink-muted transition-transform duration-200" aria-hidden="true">expand_more</span>' +
+                  '</summary>' +
+                  '<div class="mt-3 pt-3 border-t border-hairline-subtle dark:border-dark-hairline flex flex-col gap-2.5">' +
+                  reasonHtml +
+                  '<div class="p-3.5 px-4 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-800/40 flex items-start gap-2.5 shadow-sm">' +
+                  '<span class="material-symbols-outlined text-[18px] text-accent-blue shrink-0 mt-0.5" aria-hidden="true">lightbulb</span>' +
+                  '<div class="font-body text-body-sm text-ink dark:text-dark-ink leading-relaxed">' +
+                  '<span class="font-semibold text-accent-blue mr-1.5">Suggested Fix:</span>' + escapeHtml(d.suggestedFix) +
+                  '</div>' +
+                  '</div>' +
+                  '</div>';
+                dedContainer.appendChild(card);
+              });
+            }
+          }
+        } catch (e) {
+          catContainer.innerHTML = '<div class="text-xs text-badge-needs-fg">Failed loading detailed breakdown: ' + escapeHtml(e.message) + '</div>';
+          dedContainer.innerHTML = '<div class="text-xs text-badge-needs-fg">Failed loading deductions.</div>';
+        }
+      }
+
+      // Main Analysis Execution
+      async function runAnalysis(rawUser) {
+        const cleanUser = (rawUser || '').trim().replace(/^@/, '');
+        if (!cleanUser) return;
+
+        errorEl.classList.add('hidden');
+        dashboardEl.classList.add('hidden');
+        loadingEl.classList.remove('hidden');
+        loadingEl.classList.add('flex');
+
+        const steps = [
+          'Checking Bloom filter pre-check...',
+          'Querying persistent H2 cache...',
+          'Fetching public Git tree & README...',
+          'Evaluating 100-point hygiene rubric...',
+          'Computing Greedy Set Cover fix plan...'
+        ];
+        let stepIdx = 0;
+        loadingText.textContent = steps[0];
+        const stepTimer = setInterval(function () {
+          stepIdx = (stepIdx + 1) % steps.length;
+          loadingText.textContent = steps[stepIdx];
+        }, 380);
+
+        try {
+          const res = await fetch('/api/analyze/' + encodeURIComponent(cleanUser));
+          const data = await res.json();
+          clearInterval(stepTimer);
+
+          if (!res.ok) {
+            loadingEl.classList.add('hidden');
+            loadingEl.classList.remove('flex');
+            document.getElementById('error-title').textContent = data.error || ('Error ' + res.status);
+            document.getElementById('error-message').textContent = data.message || 'Unable to analyze repository hygiene for this profile.';
+            errorEl.classList.remove('hidden');
+            return;
+          }
+
+          currentAnalysisData = data;
+          renderDashboard(data);
+
+          loadingEl.classList.add('hidden');
+          loadingEl.classList.remove('flex');
+          dashboardEl.classList.remove('hidden');
+        } catch (err) {
+          clearInterval(stepTimer);
+          loadingEl.classList.add('hidden');
+          loadingEl.classList.remove('flex');
+          document.getElementById('error-title').textContent = 'Network Error';
+          document.getElementById('error-message').textContent = 'Failed to connect to RepoLens backend: ' + err.message;
+          errorEl.classList.remove('hidden');
+        }
+      }
+
+      function renderDashboard(data) {
+        const stats = data.stats || {};
+        const rankedRepos = data.rankedRepos || [];
+
+        // Header Rate Limit
+        if (data.rateLimit && headerApiQuota) {
+          headerApiQuota.textContent = 'GitHub API: ' + formatNumber(data.rateLimit.remaining) + ' / ' + formatNumber(data.rateLimit.limit);
+        }
+
+        // KPIs
+        kpiReposAnalyzed.textContent = stats.reposAnalyzed || rankedRepos.length || 0;
+        kpiReposSubtitle.textContent = 'Public repos • @' + data.username;
+
+        const median = stats.medianScore !== undefined ? stats.medianScore : (rankedRepos[0] ? rankedRepos[0].score : 0);
+        kpiMedianScore.textContent = Math.round(median);
+        const topScore = rankedRepos[0] ? rankedRepos[0].score : 0;
+        kpiMedianSubtitle.textContent = 'Top repo ' + topScore + ' • Avg ' + (stats.averageScore || topScore);
+
+        kpiStaleRepos.textContent = data.staleReposCount || (data.staleRepos ? data.staleRepos.length : 0);
+        kpiStaleSubtitle.textContent = 'Inactive > 12 months';
+
+        const tier = getTierInfo(median);
+        kpiHygieneTier.textContent = tier.label + ' Standing';
+        kpiHygieneTier.className = 'inline-flex items-center px-gutter-md py-gutter-xs rounded-full font-title text-title-md ' + tier.pill;
+        kpiHygieneSubtitle.textContent = median >= 85 ? 'Exemplary open-source hygiene' : '+' + (85 - Math.round(median)) + ' pts to Excellent tier';
+
+        // Score Distribution Chart
+        renderChart(stats.scoreBands);
+
+        // TAB 1: Ranked Repositories
+        if (tbody) tbody.innerHTML = '';
+        rankedRepos.forEach(function (repo) {
+          const repoTier = getTierInfo(repo.score);
+          const tr = document.createElement('tr');
+          tr.className = 'repo-row cursor-pointer transition-all duration-150 hover:bg-card-subtle dark:hover:bg-dark-card-subtle active:scale-[0.99] select-none';
+          tr.tabIndex = 0;
+          const pTypeLabel = repo.projectType || '';
+          tr.innerHTML =
+            '<td class="px-gutter-md py-gutter-md font-mono text-mono-sm tabular-nums text-ink-muted dark:text-dark-ink-muted">#' + repo.rank + '</td>' +
+            '<td class="px-gutter-md py-gutter-md">' +
+            '<div class="flex flex-col gap-1">' +
+            '<div class="flex items-center gap-gutter-xs"><span class="font-mono text-mono-md text-ink dark:text-dark-ink font-semibold">' + escapeHtml(repo.name) + '</span><span class="material-symbols-outlined text-[14px] text-ink-muted dark:text-dark-ink-muted" aria-hidden="true">open_in_new</span></div>' +
+            (pTypeLabel ? '<span class="inline-flex items-center gap-1 w-fit px-2 py-0.5 rounded-full text-[11px] font-medium bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline text-ink-muted dark:text-dark-ink-muted"><span class="material-symbols-outlined text-[12px] text-accent-blue">category</span>' + escapeHtml(pTypeLabel) + '</span>' : '') +
+            '</div>' +
+            '</td>' +
+            '<td class="px-gutter-md py-gutter-md"><span class="inline-flex items-center px-gutter-sm py-gutter-xs rounded-full ' + repoTier.pill + ' font-mono text-mono-sm tabular-nums font-semibold">' + repo.score + ' / 100</span></td>' +
+            '<td class="px-gutter-md py-gutter-md"><span class="inline-flex items-center px-gutter-sm py-gutter-xs rounded-full bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline font-label text-label-sm">' + escapeHtml(repo.language || 'Plain text') + '</span></td>' +
+            '<td class="px-gutter-md py-gutter-md font-mono text-mono-sm tabular-nums text-ink-muted dark:text-dark-ink-muted">' + formatNumber(repo.stars) + ' / ' + formatNumber(repo.forks) + '</td>' +
+            '<td class="px-gutter-md py-gutter-md font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">' + formatTimeAgo(repo.pushedAt) + '</td>' +
+            '<td class="px-gutter-md py-gutter-md text-right"><span class="inline-flex items-center px-gutter-sm py-gutter-xs rounded-full bg-card-subtle dark:bg-dark-card-subtle font-mono text-mono-sm text-ink-muted dark:text-dark-ink-muted">' + (repo.cached ? 'Cached' : 'Live') + '</span></td>';
+
+          tr.addEventListener('click', function () { openRepoModal(repo); });
+          tr.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openRepoModal(repo); }
+          });
+          tbody.appendChild(tr);
+        });
+      }
+
+      // Event Listeners
+      searchForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        runAnalysis(usernameInput.value);
+      });
+
+      document.querySelectorAll('.quick-sample').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const u = btn.getAttribute('data-user');
+          usernameInput.value = u;
+          runAnalysis(u);
+        });
+      });
+
+      document.getElementById('error-reset-btn').addEventListener('click', function () {
+        errorEl.classList.add('hidden');
+        if (usernameInput) usernameInput.focus();
+      });
+
+      // Initial load: parse URL param ?u= if provided
+      const urlParams = new URLSearchParams(window.location.search);
+      const initialUser = urlParams.get('u');
+      if (initialUser && initialUser.trim()) {
+        const cleanUser = initialUser.trim().replace(/^@+/, '');
+        usernameInput.value = cleanUser;
+        runAnalysis(cleanUser);
+      }
+    })();
+  </script>
+</body></html>

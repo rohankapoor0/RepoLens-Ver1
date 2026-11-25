@@ -1,0 +1,864 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RepoLens — Clean Light Repository Hygiene Evaluator</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            'ink': '#111318',
+            'ink-muted': '#4B5563',
+            'canvas': '#F5F6FA',
+            'card': '#FFFFFF',
+            'card-subtle': '#F9FAFB',
+            'hairline': '#E5E7EB',
+            'hairline-subtle': '#F0F2F5',
+            'accent-indigo': '#6366F1',
+            'accent-blue': '#2563EB',
+            'chart-excellent': '#7C8CF8',
+            'chart-good': '#3B82F6',
+            'chart-fair': '#F4B459',
+            'chart-needs': '#F26464',
+            'badge-excellent-bg': '#DCFCE7',
+            'badge-excellent-fg': '#166534',
+            'badge-good-bg': '#DBEAFE',
+            'badge-good-fg': '#1E40AF',
+            'badge-fair-bg': '#FEF3C7',
+            'badge-fair-fg': '#92400E',
+            'badge-needs-bg': '#FEE2E2',
+            'badge-needs-fg': '#991B1B',
+            'dark-canvas': '#0B0E14',
+            'dark-card': '#141820',
+            'dark-card-subtle': '#1C222D',
+            'dark-ink': '#F3F4F6',
+            'dark-ink-muted': '#9CA3AF',
+            'dark-hairline': '#262C38',
+          },
+          fontFamily: {
+            'display': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'sans-serif'],
+            'headline': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'sans-serif'],
+            'title': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'sans-serif'],
+            'body': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', 'sans-serif'],
+            'label': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', 'sans-serif'],
+            'mono': ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', 'sans-serif'],
+          },
+          fontSize: {
+            'display-lg': ['44px', { lineHeight: '50px', letterSpacing: '-1.2px', fontWeight: '700' }],
+            'display-lg-mobile': ['30px', { lineHeight: '36px', letterSpacing: '-0.8px', fontWeight: '700' }],
+            'headline-lg': ['26px', { lineHeight: '32px', letterSpacing: '-0.5px', fontWeight: '600' }],
+            'headline-md': ['20px', { lineHeight: '28px', letterSpacing: '-0.3px', fontWeight: '600' }],
+            'title-md': ['16px', { lineHeight: '24px', letterSpacing: '-0.2px', fontWeight: '600' }],
+            'body-lg': ['16px', { lineHeight: '24px', letterSpacing: '-0.1px', fontWeight: '400' }],
+            'body-md': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '400' }],
+            'body-sm': ['13px', { lineHeight: '18px', letterSpacing: '0px', fontWeight: '400' }],
+            'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '-0.1px', fontWeight: '500' }],
+            'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0px', fontWeight: '500' }],
+            'label-sm': ['11px', { lineHeight: '16px', letterSpacing: '0.1px', fontWeight: '500' }],
+            'mono-lg': ['30px', { lineHeight: '36px', letterSpacing: '-0.8px', fontWeight: '700' }],
+            'mono-md': ['13px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '500' }],
+            'mono-sm': ['12px', { lineHeight: '16px', letterSpacing: '0px', fontWeight: '400' }],
+          },
+          borderRadius: {
+            'sm': '8px',
+            'DEFAULT': '10px',
+            'md': '16px',
+            'lg': '20px',
+            'xl': '28px',
+            'full': '9999px',
+          },
+          spacing: {
+            'gutter-xs': '4px',
+            'gutter-sm': '8px',
+            'gutter-md': '16px',
+            'gutter-lg': '24px',
+            'gutter-xl': '32px',
+            'section': '48px',
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>
+    .material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp, .material-icons {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      line-height: 1 !important;
+      box-sizing: content-box;
+      overflow: hidden;
+      white-space: nowrap;
+      direction: ltr;
+      vertical-align: middle;
+    }
+    .hero-pastel-wash {
+      background: linear-gradient(135deg, #FFFFFF 0%, #F7F5FC 55%, #EFF3FF 100%);
+    }
+    .dark .hero-pastel-wash {
+      background: linear-gradient(135deg, #141820 0%, #171B26 55%, #161D2E 100%);
+    }
+    dialog::backdrop {
+      background: rgba(17, 19, 24, 0.35);
+      backdrop-filter: blur(6px);
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body class="min-h-[1024px] bg-canvas dark:bg-dark-canvas text-ink dark:text-dark-ink font-body antialiased transition-colors duration-150" data-stitch-vh="min-h-[1024px]===min-h-screen">
+
+  <!-- Apple-inspired Frosted Navigation Bar -->
+  <header class="sticky top-0 z-30 border-b border-hairline/80 dark:border-dark-hairline bg-white/80 dark:bg-dark-canvas/80 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-gutter-md sm:px-gutter-lg py-gutter-sm flex flex-wrap items-center justify-between gap-gutter-md">
+      <!-- Brand Mark -->
+      <a href="#top" class="flex items-center gap-gutter-sm group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink rounded-DEFAULT">
+        <div class="w-8 h-8 rounded-full bg-ink dark:bg-white flex items-center justify-center">
+          <span class="material-symbols-outlined text-[17px] text-white dark:text-ink" aria-hidden="true">radar</span>
+        </div>
+        <div class="flex items-baseline gap-gutter-sm">
+          <span class="font-headline text-title-md text-ink dark:text-dark-ink tracking-tight" data-design-text-token="title-md">RepoLens</span>
+          <span class="hidden md:inline font-body text-label-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-sm">Repository Hygiene Evaluator</span>
+        </div>
+      </a>
+
+      <!-- Right Controls -->
+      <div class="flex items-center gap-gutter-sm">
+        <div class="hidden md:inline-flex items-center gap-gutter-xs px-gutter-sm py-gutter-xs rounded-full bg-card-subtle dark:bg-dark-card border border-hairline dark:border-dark-hairline">
+          <span class="w-2 h-2 rounded-full bg-badge-excellent-fg" aria-hidden="true"></span>
+          <span class="font-mono text-mono-sm tabular-nums text-ink-muted dark:text-dark-ink-muted" data-design-text-token="mono-sm">GitHub API: 4,992 / 5,000</span>
+        </div>
+
+        <button id="open-rubric-btn" data-component-id="button-secondary" data-component-type="button" data-component-variant="secondary" type="button" class="inline-flex items-center justify-center gap-gutter-xs px-gutter-md py-gutter-xs rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline text-ink dark:text-dark-ink font-label text-label-md hover:bg-card-subtle dark:hover:bg-dark-card-subtle transition-colors">
+          <span data-design-text-token="label-md">Scoring Rubric</span>
+        </button>
+
+        <button id="theme-toggle-btn" data-component-id="button-icon" data-component-type="button" data-component-variant="icon" type="button" aria-label="Toggle light and dark theme" class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-dark-ink transition-colors">
+          <span id="theme-toggle-icon" class="material-symbols-outlined text-[18px]" aria-hidden="true">dark_mode</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top" class="max-w-7xl mx-auto px-gutter-md sm:px-gutter-lg py-gutter-lg sm:py-gutter-xl flex flex-col gap-gutter-xl">
+
+    <!-- Apple + Reference Inspired Hero Card with Soft Pastel Wash -->
+    <section class="hero-pastel-wash rounded-xl border border-hairline dark:border-dark-hairline shadow-[0_4px_24px_rgba(17,19,24,0.04)] px-gutter-lg py-gutter-xl sm:py-section flex flex-col items-center text-center gap-gutter-md">
+      <h1 class="font-display text-display-lg-mobile md:text-display-lg text-ink dark:text-dark-ink max-w-3xl text-balance" data-design-text-token="display-lg">
+        Effortlessly evaluate any GitHub profile for engineering hygiene.
+      </h1>
+      <p class="font-body text-body-lg text-ink-muted dark:text-dark-ink-muted max-w-2xl text-pretty" data-design-text-token="body-lg">
+        Public repos only • Zero login required • Deterministic 100-pt rubric • Not a measure of coding skill
+      </p>
+
+      <!-- Floating Pill Search Bar -->
+      <div class="w-full max-w-2xl mt-gutter-sm flex flex-col gap-gutter-sm">
+        <form id="repo-search-form" data-component-id="searchbar-standard" data-component-type="searchbar" data-component-variant="standard" role="search" class="flex items-center gap-gutter-xs sm:gap-gutter-sm p-gutter-xs pl-gutter-md rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-[0_8px_28px_rgba(17,19,24,0.06)] focus-within:border-ink dark:focus-within:border-white transition-colors">
+          <span class="font-mono text-mono-md text-ink-muted dark:text-dark-ink-muted select-none" aria-hidden="true">@</span>
+          <input id="username-input" type="search" aria-label="GitHub username" value="octocat" placeholder="Enter username or @username (e.g. @octocat, torvalds)" class="flex-1 min-w-0 bg-transparent border-0 focus:ring-0 font-body text-body-md text-ink dark:text-dark-ink placeholder:text-ink-muted dark:placeholder:text-dark-ink-muted">
+          <button id="analyze-btn" data-component-id="button-primary" data-component-type="button" data-component-variant="primary" type="submit" class="shrink-0 inline-flex items-center justify-center px-gutter-lg py-gutter-sm rounded-full bg-ink dark:bg-white text-white dark:text-ink font-label text-label-lg hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink">
+            <span data-design-text-token="label-lg">Analyze Repos</span>
+          </button>
+        </form>
+
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-gutter-sm px-gutter-sm pt-gutter-xs">
+          <p class="font-body text-label-md text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-md">
+            Backed by 8 hand-crafted algorithms, Bloom filter &amp; H2 caching.
+          </p>
+          <div class="flex items-center gap-gutter-xs flex-wrap justify-center">
+            <span class="font-label text-label-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-sm">Try:</span>
+            <button type="button" class="quick-sample px-gutter-sm py-gutter-xs rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline font-mono text-mono-sm text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-white transition-colors" data-user="octocat">@octocat</button>
+            <button type="button" class="quick-sample px-gutter-sm py-gutter-xs rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline font-mono text-mono-sm text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-white transition-colors" data-user="ghost-404">404 Test</button>
+            <button type="button" class="quick-sample px-gutter-sm py-gutter-xs rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline font-mono text-mono-sm text-ink-muted dark:text-dark-ink-muted hover:text-ink dark:hover:text-white transition-colors" data-user="rate-limit">429 Limit</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error State Banner -->
+    <section id="error-state" class="hidden" aria-live="polite">
+      <div class="p-gutter-lg rounded-lg bg-badge-needs-bg border border-badge-needs-fg/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-gutter-md">
+        <div class="flex items-center gap-gutter-md">
+          <span class="material-symbols-outlined text-[24px] text-badge-needs-fg shrink-0" aria-hidden="true">error</span>
+          <div class="flex flex-col gap-gutter-xs">
+            <h2 id="error-title" class="font-title text-title-md text-badge-needs-fg" data-design-text-token="title-md">GitHub profile not found (404)</h2>
+            <p id="error-message" class="font-body text-body-md text-badge-needs-fg/90" data-design-text-token="body-md">
+              We couldn&#39;t locate a public GitHub user or organization with that handle.
+            </p>
+          </div>
+        </div>
+        <button id="error-reset-btn" type="button" class="shrink-0 px-gutter-md py-gutter-xs rounded-full bg-ink text-white font-label text-label-md hover:opacity-90 transition-opacity">
+          <span data-design-text-token="label-md">Load @octocat</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Loading State Skeleton -->
+    <section id="loading-state" class="hidden flex-col gap-gutter-lg" aria-live="polite">
+      <div class="p-gutter-md rounded-md bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline flex items-center justify-between gap-gutter-md">
+        <div class="flex items-center gap-gutter-sm">
+          <span class="material-symbols-outlined text-[20px] text-ink dark:text-white animate-spin" aria-hidden="true">progress_activity</span>
+          <span id="loading-status-text" class="font-mono text-mono-md text-ink dark:text-dark-ink" data-design-text-token="mono-md">Checking Bloom filter...</span>
+        </div>
+        <span class="font-mono text-mono-sm text-ink-muted dark:text-dark-ink-muted tabular-nums" data-design-text-token="mono-sm">H2 Cache Lookup</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter-md">
+        <div class="h-32 rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline p-gutter-lg animate-pulse"></div>
+        <div class="h-32 rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline p-gutter-lg animate-pulse"></div>
+        <div class="h-32 rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline p-gutter-lg animate-pulse"></div>
+        <div class="h-32 rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline p-gutter-lg animate-pulse"></div>
+      </div>
+    </section>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard-content" class="flex flex-col gap-gutter-xl">
+
+      <!-- Bento Overview Grid: 4 KPI Cards + Score Distribution Chart -->
+      <section aria-label="Profile hygiene overview" class="flex flex-col gap-gutter-md">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter-md items-stretch">
+          <!-- KPI 1 -->
+          <article class="h-full p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-[0_2px_12px_rgba(17,19,24,0.02)] flex flex-col justify-between gap-gutter-sm">
+            <span class="font-label text-label-md text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-md">Repositories Analyzed</span>
+            <div class="font-mono text-mono-lg tabular-nums text-ink dark:text-dark-ink" data-design-text-token="mono-lg">17</div>
+            <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="body-sm">Public repos • @octocat</p>
+          </article>
+
+          <!-- KPI 2 -->
+          <article class="h-full p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-[0_2px_12px_rgba(17,19,24,0.02)] flex flex-col justify-between gap-gutter-sm">
+            <span class="font-label text-label-md text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-md">Median Hygiene Score</span>
+            <div class="flex items-baseline gap-gutter-xs">
+              <span class="font-mono text-mono-lg tabular-nums text-ink dark:text-dark-ink" data-design-text-token="mono-lg">78</span>
+              <span class="font-mono text-mono-md text-ink-muted dark:text-dark-ink-muted">/ 100</span>
+            </div>
+            <p class="font-body text-body-sm text-badge-good-fg dark:text-chart-good" data-design-text-token="body-sm">Top repo 94 • IQR 66–86</p>
+          </article>
+
+          <!-- KPI 3 -->
+          <article class="h-full p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-[0_2px_12px_rgba(17,19,24,0.02)] flex flex-col justify-between gap-gutter-sm">
+            <span class="font-label text-label-md text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-md">Stale Repositories</span>
+            <div class="font-mono text-mono-lg tabular-nums text-ink dark:text-dark-ink" data-design-text-token="mono-lg">3</div>
+            <p class="font-body text-body-sm text-badge-fair-fg dark:text-chart-fair" data-design-text-token="body-sm">Inactive &gt; 12 months</p>
+          </article>
+
+          <!-- KPI 4 -->
+          <article class="h-full p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-[0_2px_12px_rgba(17,19,24,0.02)] flex flex-col justify-between gap-gutter-sm">
+            <span class="font-label text-label-md text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-md">Overall Hygiene Tier</span>
+            <div>
+              <span class="inline-flex items-center px-gutter-md py-gutter-xs rounded-full bg-badge-good-bg text-badge-good-fg font-title text-title-md" data-design-text-token="title-md">Good Standing</span>
+            </div>
+            <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="body-sm">+16 pts to Excellent tier</p>
+          </article>
+        </div>
+
+        <!-- Score Distribution Card -->
+        <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-[0_2px_12px_rgba(17,19,24,0.02)] flex flex-col gap-gutter-md">
+          <header class="flex flex-wrap items-center justify-between gap-gutter-sm">
+            <div>
+              <h2 class="font-title text-title-md text-ink dark:text-dark-ink" data-design-text-token="title-md">Score Distribution</h2>
+              <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="body-sm">Repository count across 100-point rubric brackets</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-gutter-md">
+              <span class="inline-flex items-center gap-gutter-xs font-label text-label-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-sm"><span class="w-2.5 h-2.5 rounded-full bg-chart-excellent"></span>90–100</span>
+              <span class="inline-flex items-center gap-gutter-xs font-label text-label-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-sm"><span class="w-2.5 h-2.5 rounded-full bg-chart-good"></span>75–89</span>
+              <span class="inline-flex items-center gap-gutter-xs font-label text-label-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-sm"><span class="w-2.5 h-2.5 rounded-full bg-chart-fair"></span>50–74</span>
+              <span class="inline-flex items-center gap-gutter-xs font-label text-label-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="label-sm"><span class="w-2.5 h-2.5 rounded-full bg-chart-needs"></span>0–49</span>
+            </div>
+          </header>
+          <div class="w-full h-48">
+            <canvas id="score-distribution-chart" aria-label="Score distribution bar chart"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <!-- Apple-style Floating Pill Segmented Tabs -->
+      <section class="flex flex-col gap-gutter-lg">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-gutter-md">
+          <div role="tablist" aria-label="Repository analysis views" class="inline-flex flex-wrap items-center gap-gutter-xs p-gutter-xs rounded-lg sm:rounded-full bg-hairline-subtle dark:bg-dark-card border border-hairline dark:border-dark-hairline">
+            <button role="tab" id="tab-ranked" aria-selected="true" aria-controls="panel-ranked" tabindex="0" class="tab-btn px-gutter-md py-gutter-sm rounded-full bg-card dark:bg-dark-card-subtle text-ink dark:text-dark-ink shadow-sm font-label text-label-md transition-all duration-150">
+              <span data-design-text-token="label-md">Ranked Repositories</span>
+            </button>
+            <button role="tab" id="tab-fix-plan" aria-selected="false" aria-controls="panel-fix-plan" tabindex="-1" class="tab-btn px-gutter-md py-gutter-sm rounded-full text-ink-muted dark:text-dark-ink-muted font-label text-label-md hover:text-ink dark:hover:text-dark-ink transition-all duration-150">
+              <span data-design-text-token="label-md">Fix Plan (Set Cover)</span>
+            </button>
+            <button role="tab" id="tab-duplicates" aria-selected="false" aria-controls="panel-duplicates" tabindex="-1" class="tab-btn px-gutter-md py-gutter-sm rounded-full text-ink-muted dark:text-dark-ink-muted font-label text-label-md hover:text-ink dark:hover:text-dark-ink transition-all duration-150">
+              <span data-design-text-token="label-md">Duplicate Finder (DSU)</span>
+            </button>
+            <button role="tab" id="tab-stale" aria-selected="false" aria-controls="panel-stale" tabindex="-1" class="tab-btn px-gutter-md py-gutter-sm rounded-full text-ink-muted dark:text-dark-ink-muted font-label text-label-md hover:text-ink dark:hover:text-dark-ink transition-all duration-150">
+              <span data-design-text-token="label-md">Stale Repositories</span>
+            </button>
+          </div>
+
+          <span class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="body-sm">Select any repository to inspect deductions</span>
+        </div>
+
+        <!-- TAB 1: Ranked Repositories -->
+        <div role="tabpanel" id="panel-ranked" aria-labelledby="tab-ranked" tabindex="0">
+          <div class="w-full overflow-x-auto rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline shadow-[0_2px_12px_rgba(17,19,24,0.02)]">
+            <table class="w-full text-left border-collapse min-w-[760px]">
+              <thead>
+                <tr class="border-b border-hairline dark:border-dark-hairline bg-card-subtle dark:bg-dark-card-subtle">
+                  <th scope="col" class="px-gutter-md py-gutter-sm text-ink-muted dark:text-dark-ink-muted"><span class="font-label text-label-md" data-design-text-token="label-md">Rank</span></th>
+                  <th scope="col" class="px-gutter-md py-gutter-sm text-ink-muted dark:text-dark-ink-muted"><span class="font-label text-label-md" data-design-text-token="label-md">Repository</span></th>
+                  <th scope="col" class="px-gutter-md py-gutter-sm text-ink-muted dark:text-dark-ink-muted"><span class="font-label text-label-md" data-design-text-token="label-md">Score</span></th>
+                  <th scope="col" class="px-gutter-md py-gutter-sm text-ink-muted dark:text-dark-ink-muted"><span class="font-label text-label-md" data-design-text-token="label-md">Language</span></th>
+                  <th scope="col" class="px-gutter-md py-gutter-sm text-ink-muted dark:text-dark-ink-muted"><span class="font-label text-label-md" data-design-text-token="label-md">Stars &amp; Forks</span></th>
+                  <th scope="col" class="px-gutter-md py-gutter-sm text-ink-muted dark:text-dark-ink-muted"><span class="font-label text-label-md" data-design-text-token="label-md">Last Push</span></th>
+                  <th scope="col" class="px-gutter-md py-gutter-sm text-ink-muted dark:text-dark-ink-muted text-right"><span class="font-label text-label-md" data-design-text-token="label-md">Cache</span></th>
+                </tr>
+              </thead>
+              <tbody id="ranked-repos-tbody" class="divide-y divide-hairline-subtle dark:divide-dark-hairline"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 2: Fix Plan (Greedy Set Cover) -->
+        <div role="tabpanel" id="panel-fix-plan" aria-labelledby="tab-fix-plan" tabindex="0" hidden class="flex flex-col gap-gutter-md">
+          <div class="hero-pastel-wash p-gutter-lg rounded-lg border border-hairline dark:border-dark-hairline flex flex-col md:flex-row md:items-center justify-between gap-gutter-md">
+            <div class="flex items-center gap-gutter-md">
+              <div class="w-10 h-10 rounded-full bg-ink dark:bg-white text-white dark:text-ink flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[20px]" aria-hidden="true">auto_fix_high</span>
+              </div>
+              <div class="flex flex-col gap-gutter-xs">
+                <h3 class="font-title text-title-md text-ink dark:text-dark-ink" data-design-text-token="title-md">3 fixes improve 9 of your 12 repositories</h3>
+                <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="body-sm">Greedy Set Cover selected the minimum remediation set maximizing rubric points.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-gutter-sm shrink-0">
+              <span class="px-gutter-md py-gutter-xs rounded-full bg-badge-excellent-bg text-badge-excellent-fg font-mono text-mono-sm tabular-nums">+94 pts recoverable</span>
+              <span class="px-gutter-md py-gutter-xs rounded-full bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline font-mono text-mono-sm tabular-nums">Effort: 6.5</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-gutter-md">
+            <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline flex flex-col gap-gutter-md">
+              <header class="flex flex-wrap items-start justify-between gap-gutter-sm">
+                <div>
+                  <h4 class="font-title text-title-md text-ink dark:text-dark-ink" data-design-text-token="title-md">1. Add GitHub Actions CI Workflow</h4>
+                  <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="body-sm">Engineering Hygiene • Covers 5 repositories</p>
+                </div>
+                <div class="flex items-center gap-gutter-sm">
+                  <span class="px-gutter-sm py-gutter-xs rounded-full bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline font-mono text-mono-sm tabular-nums">Effort: 3.0</span>
+                  <span class="px-gutter-sm py-gutter-xs rounded-full bg-badge-excellent-bg text-badge-excellent-fg font-mono text-mono-sm tabular-nums">+42 pts</span>
+                </div>
+              </header>
+              <p class="font-body text-body-md text-ink-muted dark:text-dark-ink-muted" data-design-text-token="body-md">
+                Add <code class="font-mono text-mono-sm px-1.5 py-0.5 rounded bg-card-subtle dark:bg-dark-card-subtle">.github/workflows/ci.yml</code> with automated test, lint, and build verification on pull requests.
+              </p>
+              <footer class="flex flex-wrap items-center gap-gutter-sm pt-gutter-sm border-t border-hairline-subtle dark:border-dark-hairline">
+                <span class="font-label text-label-sm text-ink-muted dark:text-dark-ink-muted">Affected:</span>
+                <button type="button" class="repo-pill-trigger px-gutter-sm py-gutter-xs rounded-full bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline font-mono text-mono-sm hover:border-ink dark:hover:border-white transition-colors" data-repo="octocat/Spoon-Knife">Spoon-Knife</button>
+                <button type="button" class="repo-pill-trigger px-gutter-sm py-gutter-xs rounded-full bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline font-mono text-mono-sm hover:border-ink dark:hover:border-white transition-colors" data-repo="octocat/git-consortium">git-consortium</button>
+                <button type="button" class="repo-pill-trigger px-gutter-sm py-gutter-xs rounded-full bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline font-mono text-mono-sm hover:border-ink dark:hover:border-white transition-colors" data-repo="octocat/octocat.github.io">octocat.github.io</button>
+                <button type="button" class="repo-pill-trigger px-gutter-sm py-gutter-xs rounded-full bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline font-mono text-mono-sm hover:border-ink dark:hover:border-white transition-colors" data-repo="octocat/linguist-playground">linguist-playground</button>
+              </footer>
+            </article>
+
+            <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline flex flex-col gap-gutter-md">
+              <header class="flex flex-wrap items-start justify-between gap-gutter-sm">
+                <div>
+                  <h4 class="font-title text-title-md text-ink dark:text-dark-ink" data-design-text-token="title-md">2. Enable Dependabot &amp; SECURITY.md</h4>
+                  <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="body-sm">Safety &amp; Security • Covers 4 repositories</p>
+                </div>
+                <div class="flex items-center gap-gutter-sm">
+                  <span class="px-gutter-sm py-gutter-xs rounded-full bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline font-mono text-mono-sm tabular-nums">Effort: 2.0</span>
+                  <span class="px-gutter-sm py-gutter-xs rounded-full bg-badge-excellent-bg text-badge-excellent-fg font-mono text-mono-sm tabular-nums">+32 pts</span>
+                </div>
+              </header>
+              <p class="font-body text-body-md text-ink-muted dark:text-dark-ink-muted" data-design-text-token="body-md">
+                Commit <code class="font-mono text-mono-sm px-1.5 py-0.5 rounded bg-card-subtle dark:bg-dark-card-subtle">.github/dependabot.yml</code> for weekly dependency updates and add a vulnerability disclosure policy.
+              </p>
+              <footer class="flex flex-wrap items-center gap-gutter-sm pt-gutter-sm border-t border-hairline-subtle dark:border-dark-hairline">
+                <span class="font-label text-label-sm text-ink-muted dark:text-dark-ink-muted">Affected:</span>
+                <button type="button" class="repo-pill-trigger px-gutter-sm py-gutter-xs rounded-full bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline font-mono text-mono-sm hover:border-ink dark:hover:border-white transition-colors" data-repo="octocat/Hello-World">Hello-World</button>
+                <button type="button" class="repo-pill-trigger px-gutter-sm py-gutter-xs rounded-full bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline font-mono text-mono-sm hover:border-ink dark:hover:border-white transition-colors" data-repo="octocat/Spoon-Knife">Spoon-Knife</button>
+                <button type="button" class="repo-pill-trigger px-gutter-sm py-gutter-xs rounded-full bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline font-mono text-mono-sm hover:border-ink dark:hover:border-white transition-colors" data-repo="octocat/test-repo1">test-repo1</button>
+              </footer>
+            </article>
+          </div>
+        </div>
+
+        <!-- TAB 3: Duplicate Finder (DSU) -->
+        <div role="tabpanel" id="panel-duplicates" aria-labelledby="tab-duplicates" tabindex="0" hidden class="grid grid-cols-1 md:grid-cols-2 gap-gutter-md">
+          <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline flex flex-col gap-gutter-md">
+            <header class="flex items-start justify-between gap-gutter-sm">
+              <div>
+                <h3 class="font-title text-title-md text-ink dark:text-dark-ink" data-design-text-token="title-md">Cluster #1: Starter Sandbox Repos</h3>
+                <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="body-sm">2 repositories grouped by DSU</p>
+              </div>
+              <span class="px-gutter-sm py-gutter-xs rounded-full bg-badge-good-bg text-badge-good-fg font-label text-label-sm">92% Tree Overlap</span>
+            </header>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-gutter-sm">
+              <button type="button" class="repo-pill-trigger p-gutter-sm rounded-DEFAULT bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline text-left hover:border-ink dark:hover:border-white transition-colors" data-repo="octocat/Hello-World">
+                <div class="font-mono text-mono-sm text-ink dark:text-dark-ink">Hello-World</div>
+                <div class="font-mono text-mono-sm text-badge-excellent-fg tabular-nums">94 / 100</div>
+              </button>
+              <button type="button" class="repo-pill-trigger p-gutter-sm rounded-DEFAULT bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline text-left hover:border-ink dark:hover:border-white transition-colors" data-repo="octocat/test-repo1">
+                <div class="font-mono text-mono-sm text-ink dark:text-dark-ink">test-repo1</div>
+                <div class="font-mono text-mono-sm text-badge-needs-fg tabular-nums">41 / 100</div>
+              </button>
+            </div>
+            <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="body-sm">Recommendation: Archive <code class="font-mono text-mono-sm">test-repo1</code> and consolidate examples into <code class="font-mono text-mono-sm">Hello-World</code>.</p>
+          </article>
+
+          <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline flex flex-col gap-gutter-md">
+            <header class="flex items-start justify-between gap-gutter-sm">
+              <div>
+                <h3 class="font-title text-title-md text-ink dark:text-dark-ink" data-design-text-token="title-md">Cluster #2: GitHub Pages Mirrors</h3>
+                <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="body-sm">2 repositories sharing root docs</p>
+              </div>
+              <span class="px-gutter-sm py-gutter-xs rounded-full bg-badge-fair-bg text-badge-fair-fg font-label text-label-sm">Identical README Hash</span>
+            </header>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-gutter-sm">
+              <button type="button" class="repo-pill-trigger p-gutter-sm rounded-DEFAULT bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline text-left hover:border-ink dark:hover:border-white transition-colors" data-repo="octocat/octocat.github.io">
+                <div class="font-mono text-mono-sm text-ink dark:text-dark-ink">octocat.github.io</div>
+                <div class="font-mono text-mono-sm text-badge-excellent-fg tabular-nums">86 / 100</div>
+              </button>
+              <button type="button" class="repo-pill-trigger p-gutter-sm rounded-DEFAULT bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline text-left hover:border-ink dark:hover:border-white transition-colors" data-repo="octocat/linguist-playground">
+                <div class="font-mono text-mono-sm text-ink dark:text-dark-ink">linguist-playground</div>
+                <div class="font-mono text-mono-sm text-badge-fair-fg tabular-nums">58 / 100</div>
+              </button>
+            </div>
+            <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted" data-design-text-token="body-sm">Recommendation: Differentiate README purpose statements or merge static site assets.</p>
+          </article>
+        </div>
+
+        <!-- TAB 4: Stale Repositories -->
+        <div role="tabpanel" id="panel-stale" aria-labelledby="tab-stale" tabindex="0" hidden class="grid grid-cols-1 md:grid-cols-3 gap-gutter-md">
+          <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline flex flex-col justify-between gap-gutter-md">
+            <header class="flex flex-col items-start gap-gutter-xs">
+              <span class="px-gutter-sm py-gutter-xs rounded-full bg-badge-needs-bg text-badge-needs-fg font-label text-label-sm">Inactive for 28 months</span>
+              <h3 class="font-mono text-mono-md text-ink dark:text-dark-ink">octocat/test-repo1</h3>
+            </header>
+            <div class="flex flex-col gap-gutter-xs">
+              <p class="font-mono text-mono-sm text-ink-muted dark:text-dark-ink-muted tabular-nums">Last commit: 2024-07-14</p>
+              <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">Suggested action: Mark repository as Archived in GitHub Settings.</p>
+            </div>
+            <footer class="pt-gutter-sm border-t border-hairline-subtle dark:border-dark-hairline flex items-center justify-between">
+              <span class="font-mono text-mono-sm text-badge-needs-fg tabular-nums">41 / 100</span>
+              <button type="button" class="repo-pill-trigger font-label text-label-md text-accent-blue hover:underline" data-repo="octocat/test-repo1">Inspect deductions</button>
+            </footer>
+          </article>
+
+          <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline flex flex-col justify-between gap-gutter-md">
+            <header class="flex flex-col items-start gap-gutter-xs">
+              <span class="px-gutter-sm py-gutter-xs rounded-full bg-badge-fair-bg text-badge-fair-fg font-label text-label-sm">Inactive for 19 months</span>
+              <h3 class="font-mono text-mono-md text-ink dark:text-dark-ink">octocat/git-consortium</h3>
+            </header>
+            <div class="flex flex-col gap-gutter-xs">
+              <p class="font-mono text-mono-sm text-ink-muted dark:text-dark-ink-muted tabular-nums">Last commit: 2025-04-09</p>
+              <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">Suggested action: Add a maintenance status banner to README.md.</p>
+            </div>
+            <footer class="pt-gutter-sm border-t border-hairline-subtle dark:border-dark-hairline flex items-center justify-between">
+              <span class="font-mono text-mono-sm text-badge-fair-fg tabular-nums">66 / 100</span>
+              <button type="button" class="repo-pill-trigger font-label text-label-md text-accent-blue hover:underline" data-repo="octocat/git-consortium">Inspect deductions</button>
+            </footer>
+          </article>
+
+          <article class="p-gutter-lg rounded-lg bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline flex flex-col justify-between gap-gutter-md">
+            <header class="flex flex-col items-start gap-gutter-xs">
+              <span class="px-gutter-sm py-gutter-xs rounded-full bg-badge-fair-bg text-badge-fair-fg font-label text-label-sm">Inactive for 14 months</span>
+              <h3 class="font-mono text-mono-md text-ink dark:text-dark-ink">octocat/linguist-playground</h3>
+            </header>
+            <div class="flex flex-col gap-gutter-xs">
+              <p class="font-mono text-mono-sm text-ink-muted dark:text-dark-ink-muted tabular-nums">Last commit: 2025-09-22</p>
+              <p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">Suggested action: Run dependency audit and tag a maintenance release.</p>
+            </div>
+            <footer class="pt-gutter-sm border-t border-hairline-subtle dark:border-dark-hairline flex items-center justify-between">
+              <span class="font-mono text-mono-sm text-badge-fair-fg tabular-nums">58 / 100</span>
+              <button type="button" class="repo-pill-trigger font-label text-label-md text-accent-blue hover:underline" data-repo="octocat/linguist-playground">Inspect deductions</button>
+            </footer>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Repo Detail Slide-over / Modal Drawer -->
+  <dialog id="repo-detail-dialog" aria-labelledby="modal-repo-title" class="m-0 ml-auto h-full max-h-[1024px] w-full max-w-xl bg-card dark:bg-dark-card text-ink dark:text-dark-ink border-l border-hairline dark:border-dark-hairline p-0 overflow-y-auto" data-stitch-vh="max-h-[1024px]===max-h-screen">
+    <div class="p-gutter-lg flex flex-col gap-gutter-lg">
+      <header class="flex items-start justify-between gap-gutter-md pb-gutter-md border-b border-hairline dark:border-dark-hairline">
+        <div class="flex flex-col gap-gutter-xs">
+          <div class="flex flex-wrap items-center gap-gutter-sm">
+            <h2 id="modal-repo-title" class="font-mono text-headline-md text-ink dark:text-dark-ink">octocat/Spoon-Knife</h2>
+            <span id="modal-repo-score" class="px-gutter-sm py-gutter-xs rounded-full bg-badge-good-bg text-badge-good-fg font-mono text-mono-sm tabular-nums">81 / 100</span>
+          </div>
+          <a id="modal-repo-link" href="https://github.com/octocat/Spoon-Knife" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-gutter-xs font-label text-label-md text-accent-blue hover:underline">
+            <span>View on GitHub</span>
+            <span class="material-symbols-outlined text-[15px]" aria-hidden="true">open_in_new</span>
+          </a>
+        </div>
+        <button id="close-repo-dialog" type="button" aria-label="Close dialog" class="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-card-subtle dark:hover:bg-dark-card-subtle text-ink-muted dark:text-dark-ink-muted">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <section class="flex flex-col gap-gutter-sm">
+        <h3 class="font-title text-title-md text-ink dark:text-dark-ink">Rubric Category Breakdown</h3>
+        <div id="modal-categories" class="grid grid-cols-1 gap-gutter-sm"></div>
+      </section>
+
+      <section class="flex flex-col gap-gutter-sm">
+        <h3 class="font-title text-title-md text-ink dark:text-dark-ink">Itemized Deductions</h3>
+        <div id="modal-deductions" class="flex flex-col gap-gutter-sm"></div>
+      </section>
+
+      <section class="p-gutter-md rounded-lg bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline flex flex-col gap-gutter-sm">
+        <div class="flex items-center justify-between gap-gutter-sm">
+          <h3 class="font-title text-title-md text-ink dark:text-dark-ink">README Hygiene Badge</h3>
+          <button id="copy-badge-btn" type="button" class="inline-flex items-center justify-center gap-gutter-xs px-gutter-sm py-gutter-xs rounded-full bg-ink dark:bg-white text-white dark:text-ink font-label text-label-md hover:opacity-90 transition-opacity">
+            <span class="material-symbols-outlined text-[15px]" aria-hidden="true">content_copy</span>
+            <span id="copy-badge-label">Copy Badge Markdown</span>
+          </button>
+        </div>
+        <div id="badge-svg-preview" class="py-gutter-xs"></div>
+        <pre id="badge-markdown-code" class="p-gutter-sm rounded-DEFAULT bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline font-mono text-mono-sm text-ink-muted dark:text-dark-ink-muted overflow-x-auto"></pre>
+      </section>
+    </div>
+  </dialog>
+
+  <!-- Scoring Rubric Dialog -->
+  <dialog id="rubric-dialog" aria-labelledby="rubric-dialog-title" class="m-auto w-full max-w-lg rounded-lg bg-card dark:bg-dark-card text-ink dark:text-dark-ink border border-hairline dark:border-dark-hairline p-gutter-lg">
+    <header class="flex items-center justify-between gap-gutter-md pb-gutter-md border-b border-hairline dark:border-dark-hairline">
+      <h2 id="rubric-dialog-title" class="font-headline text-headline-md">Deterministic 100-Point Rubric</h2>
+      <button id="close-rubric-dialog" type="button" aria-label="Close rubric dialog" class="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-card-subtle dark:hover:bg-dark-card-subtle text-ink-muted dark:text-dark-ink-muted">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <div class="py-gutter-md flex flex-col gap-gutter-sm">
+      <div class="flex items-center justify-between py-gutter-xs border-b border-hairline-subtle dark:border-dark-hairline"><span class="font-body text-body-md">Documentation (README, badges, examples)</span><span class="font-mono text-mono-sm tabular-nums text-accent-blue">25 pts</span></div>
+      <div class="flex items-center justify-between py-gutter-xs border-b border-hairline-subtle dark:border-dark-hairline"><span class="font-body text-body-md">Engineering Hygiene (CI, tests, linter)</span><span class="font-mono text-mono-sm tabular-nums text-accent-blue">25 pts</span></div>
+      <div class="flex items-center justify-between py-gutter-xs border-b border-hairline-subtle dark:border-dark-hairline"><span class="font-body text-body-md">Maintenance (commit recency, releases)</span><span class="font-mono text-mono-sm tabular-nums text-accent-blue">20 pts</span></div>
+      <div class="flex items-center justify-between py-gutter-xs border-b border-hairline-subtle dark:border-dark-hairline"><span class="font-body text-body-md">Safety &amp; Security (Dependabot, SECURITY.md)</span><span class="font-mono text-mono-sm tabular-nums text-accent-blue">15 pts</span></div>
+      <div class="flex items-center justify-between py-gutter-xs border-b border-hairline-subtle dark:border-dark-hairline"><span class="font-body text-body-md">Licensing &amp; Community (SPDX, CONTRIBUTING)</span><span class="font-mono text-mono-sm tabular-nums text-accent-blue">10 pts</span></div>
+      <div class="flex items-center justify-between py-gutter-xs"><span class="font-body text-body-md">Project Structure (.gitignore, clean root)</span><span class="font-mono text-mono-sm tabular-nums text-accent-blue">5 pts</span></div>
+    </div>
+  </dialog>
+
+  <script>
+    (function () {
+      const REPOS = [
+        {
+          rank: 1, name: 'octocat/Hello-World', score: 94, language: 'TypeScript', stars: '2,840', forks: '1,910', lastPush: '3 days ago', cached: 'Cached 12m ago',
+          categories: [
+            { name: 'Documentation', earned: 24, max: 25 },
+            { name: 'Licensing & Community', earned: 10, max: 10 },
+            { name: 'Maintenance', earned: 19, max: 20 },
+            { name: 'Engineering Hygiene', earned: 23, max: 25 },
+            { name: 'Safety & Security', earned: 13, max: 15 },
+            { name: 'Project Structure', earned: 5, max: 5 }
+          ],
+          deductions: [
+            { pts: '-2 pts', category: 'Engineering Hygiene', reason: 'Missing code coverage threshold gate in CI workflow.', fix: 'Add coverage check step in .github/workflows/ci.yml.' },
+            { pts: '-2 pts', category: 'Safety & Security', reason: 'No CODEOWNERS file found in .github/.', fix: 'Create .github/CODEOWNERS to enforce review ownership.' }
+          ]
+        },
+        {
+          rank: 2, name: 'octocat/octocat.github.io', score: 86, language: 'JavaScript', stars: '612', forks: '340', lastPush: '2 weeks ago', cached: 'Cached 12m ago',
+          categories: [
+            { name: 'Documentation', earned: 22, max: 25 },
+            { name: 'Licensing & Community', earned: 9, max: 10 },
+            { name: 'Maintenance', earned: 18, max: 20 },
+            { name: 'Engineering Hygiene', earned: 20, max: 25 },
+            { name: 'Safety & Security', earned: 12, max: 15 },
+            { name: 'Project Structure', earned: 5, max: 5 }
+          ],
+          deductions: [
+            { pts: '-5 pts', category: 'Engineering Hygiene', reason: 'No automated link-checker or HTML validator in GitHub Actions.', fix: 'Add lychee-action to .github/workflows/ci.yml.' },
+            { pts: '-3 pts', category: 'Documentation', reason: 'README lacks local preview setup instructions.', fix: 'Document local Jekyll / static server commands.' }
+          ]
+        },
+        {
+          rank: 3, name: 'octocat/Spoon-Knife', score: 81, language: 'HTML', stars: '12.4k', forks: '145k', lastPush: '1 month ago', cached: 'Cached 12m ago',
+          categories: [
+            { name: 'Documentation', earned: 22, max: 25 },
+            { name: 'Licensing & Community', earned: 10, max: 10 },
+            { name: 'Maintenance', earned: 16, max: 20 },
+            { name: 'Engineering Hygiene', earned: 18, max: 25 },
+            { name: 'Safety & Security', earned: 10, max: 15 },
+            { name: 'Project Structure', earned: 5, max: 5 }
+          ],
+          deductions: [
+            { pts: '-7 pts', category: 'Engineering Hygiene', reason: 'Missing .github/workflows/ci.yml continuous integration check.', fix: 'Add a lightweight lint & formatting workflow on pull_request.' },
+            { pts: '-5 pts', category: 'Safety & Security', reason: 'No Dependabot or SECURITY.md policy present.', fix: 'Add .github/dependabot.yml and SECURITY.md.' }
+          ]
+        },
+        {
+          rank: 4, name: 'octocat/git-consortium', score: 66, language: 'Python', stars: '418', forks: '104', lastPush: '19 months ago', cached: 'Cached 12m ago',
+          categories: [
+            { name: 'Documentation', earned: 18, max: 25 },
+            { name: 'Licensing & Community', earned: 6, max: 10 },
+            { name: 'Maintenance', earned: 10, max: 20 },
+            { name: 'Engineering Hygiene', earned: 17, max: 25 },
+            { name: 'Safety & Security', earned: 10, max: 15 },
+            { name: 'Project Structure', earned: 5, max: 5 }
+          ],
+          deductions: [
+            { pts: '-10 pts', category: 'Maintenance', reason: 'No commits pushed in 19 months.', fix: 'Add maintenance status notice or archive repository.' },
+            { pts: '-8 pts', category: 'Engineering Hygiene', reason: 'Missing GitHub Actions CI workflow.', fix: 'Add pytest + ruff workflow in .github/workflows/ci.yml.' }
+          ]
+        },
+        {
+          rank: 5, name: 'octocat/linguist-playground', score: 58, language: 'Ruby', stars: '195', forks: '44', lastPush: '14 months ago', cached: 'Cached 12m ago',
+          categories: [
+            { name: 'Documentation', earned: 15, max: 25 },
+            { name: 'Licensing & Community', earned: 7, max: 10 },
+            { name: 'Maintenance', earned: 11, max: 20 },
+            { name: 'Engineering Hygiene', earned: 13, max: 25 },
+            { name: 'Safety & Security', earned: 8, max: 15 },
+            { name: 'Project Structure', earned: 4, max: 5 }
+          ],
+          deductions: [
+            { pts: '-12 pts', category: 'Engineering Hygiene', reason: 'No test suite or CI pipeline detected.', fix: 'Add RSpec tests and GitHub Actions workflow.' },
+            { pts: '-10 pts', category: 'Documentation', reason: 'README is under 120 words and lacks usage examples.', fix: 'Expand README.md with installation and CLI examples.' }
+          ]
+        },
+        {
+          rank: 6, name: 'octocat/test-repo1', score: 41, language: 'Shell', stars: '74', forks: '19', lastPush: '28 months ago', cached: 'Cached 12m ago',
+          categories: [
+            { name: 'Documentation', earned: 9, max: 25 },
+            { name: 'Licensing & Community', earned: 2, max: 10 },
+            { name: 'Maintenance', earned: 5, max: 20 },
+            { name: 'Engineering Hygiene', earned: 12, max: 25 },
+            { name: 'Safety & Security', earned: 9, max: 15 },
+            { name: 'Project Structure', earned: 4, max: 5 }
+          ],
+          deductions: [
+            { pts: '-15 pts', category: 'Maintenance', reason: 'Repository inactive for 28 months.', fix: 'Archive repository or update dependencies.' },
+            { pts: '-8 pts', category: 'Licensing & Community', reason: 'Missing LICENSE and CONTRIBUTING.md files.', fix: 'Add MIT LICENSE and CONTRIBUTING.md.' }
+          ]
+        }
+      ];
+
+      function getTierInfo(score) {
+        if (score >= 85) return { label: 'Excellent', pill: 'bg-badge-excellent-bg text-badge-excellent-fg', bar: 'bg-chart-excellent', hex: '#7C8CF8' };
+        if (score >= 70) return { label: 'Good', pill: 'bg-badge-good-bg text-badge-good-fg', bar: 'bg-chart-good', hex: '#3B82F6' };
+        if (score >= 50) return { label: 'Fair', pill: 'bg-badge-fair-bg text-badge-fair-fg', bar: 'bg-chart-fair', hex: '#F4B459' };
+        return { label: 'Needs Work', pill: 'bg-badge-needs-bg text-badge-needs-fg', bar: 'bg-chart-needs', hex: '#F26464' };
+      }
+
+      const tbody = document.getElementById('ranked-repos-tbody');
+      REPOS.forEach(function (repo) {
+        const tier = getTierInfo(repo.score);
+        const tr = document.createElement('tr');
+        tr.className = 'cursor-pointer transition-colors hover:bg-card-subtle dark:hover:bg-dark-card-subtle';
+        tr.tabIndex = 0;
+        tr.innerHTML =
+          '<td class="px-gutter-md py-gutter-md font-mono text-mono-sm tabular-nums text-ink-muted dark:text-dark-ink-muted">#' + repo.rank + '</td>' +
+          '<td class="px-gutter-md py-gutter-md"><div class="flex items-center gap-gutter-xs"><span class="font-mono text-mono-md text-ink dark:text-dark-ink">' + repo.name + '</span><span class="material-symbols-outlined text-[14px] text-ink-muted dark:text-dark-ink-muted" aria-hidden="true">open_in_new</span></div></td>' +
+          '<td class="px-gutter-md py-gutter-md"><span class="inline-flex items-center px-gutter-sm py-gutter-xs rounded-full ' + tier.pill + ' font-mono text-mono-sm tabular-nums">' + repo.score + ' / 100</span></td>' +
+          '<td class="px-gutter-md py-gutter-md"><span class="inline-flex items-center px-gutter-sm py-gutter-xs rounded-full bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline font-label text-label-sm">' + repo.language + '</span></td>' +
+          '<td class="px-gutter-md py-gutter-md font-mono text-mono-sm tabular-nums text-ink-muted dark:text-dark-ink-muted">' + repo.stars + ' / ' + repo.forks + '</td>' +
+          '<td class="px-gutter-md py-gutter-md font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">' + repo.lastPush + '</td>' +
+          '<td class="px-gutter-md py-gutter-md text-right"><span class="inline-flex items-center px-gutter-sm py-gutter-xs rounded-full bg-card-subtle dark:bg-dark-card-subtle font-mono text-mono-sm text-ink-muted dark:text-dark-ink-muted">' + repo.cached + '</span></td>';
+        tr.addEventListener('click', function () { openRepoModal(repo); });
+        tr.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openRepoModal(repo); }
+        });
+        tbody.appendChild(tr);
+      });
+
+      document.querySelectorAll('.repo-pill-trigger').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const name = btn.getAttribute('data-repo');
+          const found = REPOS.find(function (r) { return r.name === name; }) || REPOS[0];
+          openRepoModal(found);
+        });
+      });
+
+      const repoDialog = document.getElementById('repo-detail-dialog');
+      const rubricDialog = document.getElementById('rubric-dialog');
+
+      function openRepoModal(repo) {
+        const tier = getTierInfo(repo.score);
+        document.getElementById('modal-repo-title').textContent = repo.name;
+        const scoreEl = document.getElementById('modal-repo-score');
+        scoreEl.textContent = repo.score + ' / 100';
+        scoreEl.className = 'px-gutter-sm py-gutter-xs rounded-full font-mono text-mono-sm tabular-nums ' + tier.pill;
+        document.getElementById('modal-repo-link').href = 'https://github.com/' + repo.name;
+
+        const catContainer = document.getElementById('modal-categories');
+        catContainer.innerHTML = '';
+        repo.categories.forEach(function (cat) {
+          const pct = Math.round((cat.earned / cat.max) * 100);
+          const barTier = getTierInfo(pct);
+          const row = document.createElement('div');
+          row.className = 'flex flex-col gap-gutter-xs';
+          row.innerHTML =
+            '<div class="flex items-center justify-between text-body-sm">' +
+            '<span class="font-label text-label-md text-ink dark:text-dark-ink">' + cat.name + '</span>' +
+            '<span class="font-mono text-mono-sm tabular-nums text-ink-muted dark:text-dark-ink-muted">' + cat.earned + ' / ' + cat.max + ' pts</span>' +
+            '</div>' +
+            '<div class="w-full h-2 rounded-full bg-hairline-subtle dark:bg-dark-card-subtle overflow-hidden">' +
+            '<div class="h-full rounded-full ' + barTier.bar + '" style="width: ' + pct + '%"></div>' +
+            '</div>';
+          catContainer.appendChild(row);
+        });
+
+        const dedContainer = document.getElementById('modal-deductions');
+        dedContainer.innerHTML = '';
+        repo.deductions.forEach(function (d) {
+          const card = document.createElement('details');
+          card.open = true;
+          card.className = 'rounded-md bg-card-subtle dark:bg-dark-card-subtle border border-hairline dark:border-dark-hairline p-gutter-md';
+          card.innerHTML =
+            '<summary class="flex items-center justify-between gap-gutter-sm cursor-pointer list-none">' +
+            '<div class="flex items-center gap-gutter-sm">' +
+            '<span class="px-gutter-sm py-gutter-xs rounded-full bg-badge-needs-bg text-badge-needs-fg font-mono text-mono-sm tabular-nums">' + d.pts + '</span>' +
+            '<span class="font-label text-label-md text-ink dark:text-dark-ink">' + d.category + '</span>' +
+            '</div>' +
+            '<span class="material-symbols-outlined text-[18px] text-ink-muted dark:text-dark-ink-muted" aria-hidden="true">expand_more</span>' +
+            '</summary>' +
+            '<div class="mt-gutter-sm pt-gutter-sm border-t border-hairline-subtle dark:border-dark-hairline flex flex-col gap-gutter-xs">' +
+            '<p class="font-body text-body-sm text-ink-muted dark:text-dark-ink-muted">' + d.reason + '</p>' +
+            '<div class="p-gutter-sm rounded-DEFAULT bg-card dark:bg-dark-card border border-hairline dark:border-dark-hairline font-body text-body-sm text-ink dark:text-dark-ink"><strong class="font-label text-accent-blue">Suggested Fix:</strong> ' + d.fix + '</div>' +
+            '</div>';
+          dedContainer.appendChild(card);
+        });
+
+        document.getElementById('badge-svg-preview').innerHTML =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="142" height="22" role="img" aria-label="repolens: ' + repo.score + '/100">' +
+          '<rect width="74" height="22" rx="6" fill="#111318"/>' +
+          '<rect x="70" width="72" height="22" rx="6" fill="' + tier.hex + '"/>' +
+          '<rect x="70" width="6" height="22" fill="' + tier.hex + '"/>' +
+          '<text x="37" y="15" fill="#ffffff" font-family="Inter, sans-serif" font-size="11" font-weight="600" text-anchor="middle">repolens</text>' +
+          '<text x="106" y="15" fill="#111318" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="700" text-anchor="middle">' + repo.score + '/100</text>' +
+          '</svg>';
+
+        document.getElementById('badge-markdown-code').textContent = '[![RepoLens](https://repolens.dev/badge/' + repo.name + '.svg)](https://repolens.dev/repo/' + repo.name + ')';
+        document.getElementById('copy-badge-label').textContent = 'Copy Badge Markdown';
+        if (typeof repoDialog.showModal === 'function') repoDialog.showModal();
+      }
+
+      document.getElementById('close-repo-dialog').addEventListener('click', function () { repoDialog.close(); });
+      document.getElementById('open-rubric-btn').addEventListener('click', function () { if (typeof rubricDialog.showModal === 'function') rubricDialog.showModal(); });
+      document.getElementById('close-rubric-dialog').addEventListener('click', function () { rubricDialog.close(); });
+
+      document.getElementById('copy-badge-btn').addEventListener('click', function () {
+        const text = document.getElementById('badge-markdown-code').textContent;
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(function () {});
+        document.getElementById('copy-badge-label').textContent = 'Copied!';
+        setTimeout(function () { document.getElementById('copy-badge-label').textContent = 'Copy Badge Markdown'; }, 1600);
+      });
+
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      const tabPanels = document.querySelectorAll('[role="tabpanel"]');
+      tabButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const targetId = btn.getAttribute('aria-controls');
+          tabButtons.forEach(function (b) {
+            const active = b === btn;
+            b.setAttribute('aria-selected', active ? 'true' : 'false');
+            b.tabIndex = active ? 0 : -1;
+            b.className = active
+              ? 'tab-btn px-gutter-md py-gutter-sm rounded-full bg-card dark:bg-dark-card-subtle text-ink dark:text-dark-ink shadow-sm font-label text-label-md transition-all duration-150'
+              : 'tab-btn px-gutter-md py-gutter-sm rounded-full text-ink-muted dark:text-dark-ink-muted font-label text-label-md hover:text-ink dark:hover:text-dark-ink transition-all duration-150';
+          });
+          tabPanels.forEach(function (panel) { panel.hidden = panel.id !== targetId; });
+        });
+      });
+
+      let distributionChart = null;
+      function renderChart() {
+        const canvas = document.getElementById('score-distribution-chart');
+        if (!canvas || typeof Chart === 'undefined') return;
+        const isDark = document.documentElement.classList.contains('dark');
+        const textColor = isDark ? '#9CA3AF' : '#6B7280';
+        const gridColor = isDark ? 'rgba(38, 44, 56, 0.7)' : 'rgba(229, 231, 235, 0.8)';
+
+        if (distributionChart) distributionChart.destroy();
+        distributionChart = new Chart(canvas.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: ['90–100 (Excellent)', '75–89 (Good)', '50–74 (Fair)', '0–49 (Needs Work)'],
+            datasets: [{
+              label: 'Repositories',
+              data: [4, 7, 4, 2],
+              backgroundColor: ['#7C8CF8', '#3B82F6', '#F4B459', '#F26464'],
+              borderRadius: 10,
+              barPercentage: 0.48
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter, sans-serif', size: 12 } } },
+              y: { beginAtZero: true, ticks: { stepSize: 2, color: textColor, font: { family: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', size: 11 } }, grid: { color: gridColor } }
+            }
+          }
+        });
+      }
+      renderChart();
+
+      const themeBtn = document.getElementById('theme-toggle-btn');
+      const themeIcon = document.getElementById('theme-toggle-icon');
+      themeBtn.addEventListener('click', function () {
+        const willBeDark = !document.documentElement.classList.contains('dark');
+        document.documentElement.classList.toggle('dark', willBeDark);
+        themeIcon.textContent = willBeDark ? 'light_mode' : 'dark_mode';
+        renderChart();
+      });
+
+      const loadingEl = document.getElementById('loading-state');
+      const errorEl = document.getElementById('error-state');
+      const dashboardEl = document.getElementById('dashboard-content');
+      const loadingText = document.getElementById('loading-status-text');
+      const usernameInput = document.getElementById('username-input');
+
+      function runAnalysis(rawUser) {
+        const user = (rawUser || '').trim().replace(/^@/, '');
+        errorEl.classList.add('hidden');
+        dashboardEl.classList.add('hidden');
+        loadingEl.classList.remove('hidden');
+        loadingEl.classList.add('flex');
+
+        const steps = ['Checking Bloom filter...', 'Fetching repo trees...', 'Executing Set Cover plan...'];
+        let stepIdx = 0;
+        loadingText.textContent = steps[0];
+        const interval = setInterval(function () {
+          stepIdx += 1;
+          if (stepIdx < steps.length) loadingText.textContent = steps[stepIdx];
+        }, 420);
+
+        setTimeout(function () {
+          clearInterval(interval);
+          loadingEl.classList.add('hidden');
+          loadingEl.classList.remove('flex');
+          if (user === 'ghost-404') {
+            document.getElementById('error-title').textContent = 'GitHub profile not found (404)';
+            document.getElementById('error-message').textContent = 'No public GitHub user or organization matched "@ghost-404".';
+            errorEl.classList.remove('hidden');
+          } else if (user === 'rate-limit') {
+            document.getElementById('error-title').textContent = 'GitHub API rate limit reached (429)';
+            document.getElementById('error-message').textContent = 'Unauthenticated quota exhausted. Next reset window in 14m 22s.';
+            errorEl.classList.remove('hidden');
+          } else {
+            dashboardEl.classList.remove('hidden');
+          }
+        }, 1250);
+      }
+
+      document.getElementById('repo-search-form').addEventListener('submit', function (e) { e.preventDefault(); runAnalysis(usernameInput.value); });
+      document.querySelectorAll('.quick-sample').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const u = btn.getAttribute('data-user');
+          usernameInput.value = u;
+          runAnalysis(u);
+        });
+      });
+      document.getElementById('error-reset-btn').addEventListener('click', function () {
+        usernameInput.value = 'octocat';
+        errorEl.classList.add('hidden');
+        dashboardEl.classList.remove('hidden');
+      });
+    })();
+  </script>
+
+
+</body></html>

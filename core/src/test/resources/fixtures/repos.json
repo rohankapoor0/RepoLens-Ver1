@@ -1,0 +1,73 @@
+[
+  {
+    "name": "sample-repo",
+    "full_name": "testuser/sample-repo",
+    "owner": {
+      "login": "testuser"
+    },
+    "description": "A high-quality sample repository for testing",
+    "topics": ["java", "spring-boot", "quality"],
+    "license": {
+      "key": "mit",
+      "name": "MIT License",
+      "spdx_id": "MIT"
+    },
+    "language": "Java",
+    "stargazers_count": 42,
+    "forks_count": 5,
+    "open_issues_count": 2,
+    "pushed_at": "2026-05-10T12:00:00Z",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2026-05-10T12:30:00Z",
+    "default_branch": "main",
+    "size": 1024,
+    "archived": false,
+    "fork": false
+  },
+  {
+    "name": "forked-repo",
+    "full_name": "testuser/forked-repo",
+    "owner": {
+      "login": "testuser"
+    },
+    "description": "Forked utility",
+    "topics": [],
+    "license": null,
+    "language": "Python",
+    "stargazers_count": 1,
+    "forks_count": 0,
+    "open_issues_count": 0,
+    "pushed_at": "2025-01-01T00:00:00Z",
+    "created_at": "2024-05-01T00:00:00Z",
+    "updated_at": "2025-01-01T00:00:00Z",
+    "default_branch": "master",
+    "size": 256,
+    "archived": false,
+    "fork": true
+  },
+  {
+    "name": "archived-legacy",
+    "full_name": "testuser/archived-legacy",
+    "owner": {
+      "login": "testuser"
+    },
+    "description": "Old deprecated library",
+    "topics": ["legacy"],
+    "license": {
+      "key": "apache-2.0",
+      "name": "Apache License 2.0",
+      "spdx_id": "Apache-2.0"
+    },
+    "language": "Java",
+    "stargazers_count": 10,
+    "forks_count": 2,
+    "open_issues_count": 0,
+    "pushed_at": "2022-01-01T00:00:00Z",
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2022-01-01T00:00:00Z",
+    "default_branch": "main",
+    "size": 512,
+    "archived": true,
+    "fork": false
+  }
+]

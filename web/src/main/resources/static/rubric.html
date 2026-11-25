@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scoring Rubric & Methodology — RepoLens</title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>⚖️</text></svg>">
+  <style>
+    :root {
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --bg-primary: #090d13;
+      --bg-secondary: #0d1117;
+      --bg-card: #161b22;
+      --border-color: #30363d;
+      --border-muted: #21262d;
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --accent-blue: #2f81f7;
+      --accent-glow: rgba(47, 129, 247, 0.25);
+      --score-green: #3fb950;
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #f6f8fa;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --border-color: #d0d7de;
+      --border-muted: #e1e4e8;
+      --text-primary: #1f2328;
+      --text-secondary: #656d76;
+      --text-muted: #8c959f;
+      --accent-blue: #0969da;
+      --accent-glow: rgba(9, 105, 218, 0.15);
+      --score-green: #1a7f37;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .navbar {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      text-decoration: none;
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 1.15rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .container {
+      max-width: 860px;
+      width: 100%;
+      margin: 36px auto;
+      padding: 0 20px;
+      flex: 1;
+    }
+
+    .hero {
+      margin-bottom: 30px;
+    }
+
+    .hero h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .hero p {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    .disclaimer-banner {
+      background: var(--bg-card);
+      border-left: 4px solid var(--accent-blue);
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 32px;
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+    }
+
+    .rubric-category-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 24px;
+    }
+
+    .category-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--border-muted);
+      padding-bottom: 10px;
+    }
+
+    .category-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .points-badge {
+      background: var(--accent-glow);
+      color: var(--accent-blue);
+      font-weight: 800;
+      font-size: 0.85rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .criteria-list {
+      list-style: none;
+    }
+
+    .criteria-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--border-muted);
+      font-size: 0.92rem;
+    }
+
+    .criteria-item:last-child {
+      border-bottom: none;
+    }
+
+    .criteria-desc {
+      color: var(--text-secondary);
+    }
+
+    .criteria-pts {
+      font-weight: 700;
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      min-width: 60px;
+      text-align: right;
+    }
+
+    .footer {
+      border-top: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      padding: 18px;
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: auto;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="navbar">
+    <a href="/" class="brand">
+      <span>RepoLens</span>
+      <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">• Methodology</span>
+    </a>
+    <div style="display: flex; gap: 14px; align-items: center;">
+      <a href="/mcp.html" style="color: var(--accent-blue); text-decoration: none; font-size: 0.88rem; font-weight: 600;">MCP Server</a>
+      <a href="/" style="color: var(--text-secondary); text-decoration: none; font-size: 0.88rem;">← Back
+        to Analyzer</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>100-Point Scoring Rubric</h1>
+      <p>RepoLens uses a 100% deterministic, rule-based grading engine. Zero machine learning or external LLMs.</p>
+    </section>
+
+    <div class="disclaimer-banner">
+      <strong>Important Principle:</strong> This score measures repository hygiene, engineering practices, safety, and
+      documentation standards — not code quality or algorithmic correctness. High scores signify clear documentation,
+      tests, CI/CD automation, open-source licensing, and clean safety practices.
+    </div>
+
+    <!-- 1. Documentation -->
+    <div class="rubric-category-card">
+      <div class="category-header">
+        <div class="category-title">1. Documentation & Discoverability</div>
+        <span class="points-badge">25 Points Max</span>
+      </div>
+      <ul class="criteria-list">
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>README Presence:</strong> Root README.md exists explaining the
+            project</span>
+          <span class="criteria-pts">20 pts</span>
+        </li>
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>README Substance:</strong> Detailed README exceeding 200 characters</span>
+          <span class="criteria-pts">4 pts</span>
+        </li>
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>Installation & Usage:</strong> Headings for installation, setup, or
+            quickstart</span>
+          <span class="criteria-pts">5 pts</span>
+        </li>
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>Demo Visuals:</strong> Architecture diagram, screenshot, or demo GIF in
+            README</span>
+          <span class="criteria-pts">2 pts</span>
+        </li>
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>Repository Description:</strong> Non-empty GitHub summary
+            description</span>
+          <span class="criteria-pts">2 pts</span>
+        </li>
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>Topics & Tags:</strong> At least 1 discoverable GitHub topic tag</span>
+          <span class="criteria-pts">2 pts</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 2. Licensing & Community -->
+    <div class="rubric-category-card">
+      <div class="category-header">
+        <div class="category-title">2. Licensing & Community Standards</div>
+        <span class="points-badge">10 Points Max</span>
+      </div>
+      <ul class="criteria-list">
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>Open Source License:</strong> Standard LICENSE file (MIT, Apache, GPL,
+            BSD, etc.)</span>
+          <span class="criteria-pts">5 pts</span>
+        </li>
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>Contribution Guidelines:</strong> CONTRIBUTING.md guide for community
+            contributions</span>
+          <span class="criteria-pts">3 pts</span>
+        </li>
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>Issue / PR Templates:</strong> Standardized bug report and PR templates in
+            <code>.github/</code></span>
+          <span class="criteria-pts">2 pts</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 3. Maintenance -->
+    <div class="rubric-category-card">
+      <div class="category-header">
+        <div class="category-title">3. Maintenance & Commit Activity</div>
+        <span class="points-badge">20 Points Max</span>
+      </div>
+      <ul class="criteria-list">
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>Push Recency:</strong> Commit pushed within the last 180 days (graded up
+            to 365 days)</span>
+          <span class="criteria-pts">8 pts</span>
+        </li>
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>Commit Frequency:</strong> History with multiple commits demonstrating
+            sustained development</span>
+          <span class="criteria-pts">6 pts</span>
+        </li>
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>Active Project Status:</strong> Repository is actively maintained (not
+            marked as archived)</span>
+          <span class="criteria-pts">6 pts</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 4. Engineering Hygiene -->
+    <div class="rubric-category-card">
+      <div class="category-header">
+        <div class="category-title">4. Engineering Hygiene</div>
+        <span class="points-badge">25 Points Max</span>
+      </div>
+      <ul class="criteria-list">
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>Automated Test Suite:</strong> Test directories (<code>src/test/</code>,
+            <code>tests/</code>, etc.) or test source files</span>
+          <span class="criteria-pts">10 pts</span>
+        </li>
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>CI/CD Automation:</strong> Continuous Integration workflow files in
+            <code>.github/workflows</code></span>
+          <span class="criteria-pts">7 pts</span>
+        </li>
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>.gitignore Configuration:</strong> Proper ignore manifest preventing
+            repository bloat</span>
+          <span class="criteria-pts">4 pts</span>
+        </li>
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>Build Manifest:</strong> Standard build descriptor (<code>pom.xml</code>,
+            <code>package.json</code>, <code>requirements.txt</code>, etc.)</span>
+          <span class="criteria-pts">4 pts</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 5. Safety & Secrets -->
+    <div class="rubric-category-card">
+      <div class="category-header">
+        <div class="category-title">5. Safety & Secret Prevention (Trie & KMP)</div>
+        <span class="points-badge">15 Points Max</span>
+      </div>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 12px;">
+        Evaluated deterministically via our hand-crafted <strong>Trie</strong> and <strong>Knuth-Morris-Pratt
+          (KMP)</strong> substring matchers on file paths and README text. Does NOT clone repository contents or fetch
+        private files.
+      </p>
+      <ul class="criteria-list">
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>No Committed .env Files:</strong> Clean from real <code>.env</code> or
+            credentials files (templates like <code>.env.example</code> are allowed)</span>
+          <span class="criteria-pts">5 pts</span>
+        </li>
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>No Committed Private Keys:</strong> Clean from SSH / RSA private key files
+            (<code>id_rsa</code>, <code>id_ed25519</code>)</span>
+          <span class="criteria-pts">5 pts</span>
+        </li>
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>No Committed Dependencies / OS Junk:</strong> Free from
+            <code>node_modules/</code>, <code>.DS_Store</code>, or build output directories</span>
+          <span class="criteria-pts">5 pts</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 6. Structure -->
+    <div class="rubric-category-card">
+      <div class="category-header">
+        <div class="category-title">6. Repository Structure & Layout</div>
+        <span class="points-badge">5 Points Max</span>
+      </div>
+      <ul class="criteria-list">
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>Sensible Layout:</strong> Uses organized code directories
+            (<code>src/</code>, <code>lib/</code>, <code>app/</code>) rather than a flat root dump</span>
+          <span class="criteria-pts">3 pts</span>
+        </li>
+        <li class="criteria-item">
+          <span class="criteria-desc"><strong>File Size Standards:</strong> Free from single massive binary or data
+            files exceeding 5 MB</span>
+          <span class="criteria-pts">2 pts</span>
+        </li>
+      </ul>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div style="display: flex; justify-content: space-between; align-items: center; max-width: 860px; margin: 0 auto; flex-wrap: wrap; gap: 12px;">
+      <span>RepoLens — College Project • Pure Deterministic Algorithms • Java 17 & Spring Boot 3</span>
+      <div style="display: flex; gap: 14px;">
+        <a href="/" style="color: var(--text-muted); text-decoration: none;">Home</a>
+        <a href="/repolens-clean/RepoLensClean.html" style="color: var(--text-muted); text-decoration: none;">Evaluator</a>
+        <a href="/mcp.html" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">MCP</a>
+      </div>
+    </div>
+  </footer>
+</body>
+
+</html>

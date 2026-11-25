@@ -1,0 +1,25 @@
+{
+  "name": "sample-repo",
+  "full_name": "testuser/sample-repo",
+  "owner": {
+    "login": "testuser"
+  },
+  "description": "Detailed repository for unit testing",
+  "topics": ["testing", "clean-code"],
+  "license": {
+    "key": "mit",
+    "name": "MIT License",
+    "spdx_id": "MIT"
+  },
+  "language": "Java",
+  "stargazers_count": 128,
+  "forks_count": 14,
+  "open_issues_count": 3,
+  "pushed_at": "2026-06-01T15:30:00Z",
+  "created_at": "2024-02-15T10:00:00Z",
+  "updated_at": "2026-06-01T15:30:00Z",
+  "default_branch": "main",
+  "size": 2048,
+  "archived": false,
+  "fork": false
+}
